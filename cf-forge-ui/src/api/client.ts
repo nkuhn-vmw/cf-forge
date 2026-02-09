@@ -1,13 +1,54 @@
 const BASE_URL = '/api/v1'
 
+let refreshPromise: Promise<boolean> | null = null
+
+async function attemptRefresh(): Promise<boolean> {
+  try {
+    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: {
       'Content-Type': 'application/json',
       ...options?.headers,
     },
+    credentials: 'include',
     ...options,
   })
+
+  if (res.status === 401) {
+    // Deduplicate concurrent refresh attempts
+    if (!refreshPromise) {
+      refreshPromise = attemptRefresh().finally(() => { refreshPromise = null })
+    }
+    const refreshed = await refreshPromise
+    if (refreshed) {
+      // Retry the original request
+      const retryRes = await fetch(`${BASE_URL}${path}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options?.headers,
+        },
+        credentials: 'include',
+        ...options,
+      })
+      if (retryRes.ok) {
+        if (retryRes.status === 204) return undefined as T
+        return retryRes.json()
+      }
+    }
+    // Refresh failed or retry failed — redirect to login
+    window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+    throw new Error('Authentication required')
+  }
 
   if (!res.ok) {
     const error = await res.text().catch(() => res.statusText)

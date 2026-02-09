@@ -60,6 +60,11 @@ cf:
     endpoint: ${CF_API_ENDPOINT:https://api.sys.example.com}
   forge:
     domain: ${CF_FORGE_DOMAIN:http://localhost:5173}
+    sso:
+      client-id: ${spring.security.oauth2.client.registration.sso.client-id:${SSO_CLIENT_ID:local-dev-client}}
+      client-secret: ${spring.security.oauth2.client.registration.sso.client-secret:${SSO_CLIENT_SECRET:local-dev-secret}}
+      issuer-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri:${SSO_ISSUER_URI:http://localhost:8080/uaa/oauth/token}}
+      scopes: openid,profile,email,roles,cfforge.admin
 
 server:
   port: 8080

@@ -1,5 +1,6 @@
 package com.cfforge.api.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,6 +21,15 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final CookieBearerTokenResolver cookieBearerTokenResolver;
+    private final String domain;
+
+    public SecurityConfig(CookieBearerTokenResolver cookieBearerTokenResolver,
+                          @Value("${cf.forge.domain}") String domain) {
+        this.cookieBearerTokenResolver = cookieBearerTokenResolver;
+        this.domain = domain;
+    }
+
     @Bean
     public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -28,13 +38,16 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/callback",
+                    "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
+                .requestMatchers("/api/v1/auth/me").authenticated()
                 .requestMatchers("/ws/**").authenticated()
                 .requestMatchers("/api/v1/**").authenticated()
                 .anyRequest().denyAll()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(cfForgeJwtConverter()))
+                .bearerTokenResolver(cookieBearerTokenResolver)
             )
             .build();
     }
@@ -61,7 +74,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfig() {
         var config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*"));
+        config.setAllowedOriginPatterns(List.of(domain));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

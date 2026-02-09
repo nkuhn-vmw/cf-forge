@@ -10,6 +10,7 @@ applications:
     env:
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
       SPRING_PROFILES_ACTIVE: cloud
+      CF_FORGE_DOMAIN: https://cf-forge-ui.apps.tas-ndc.kuhn-labs.com
     services:
       - cf-forge-db
       - cf-forge-cache

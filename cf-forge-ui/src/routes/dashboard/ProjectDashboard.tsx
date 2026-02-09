@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Plus, Code2, Rocket, Settings, Trash2, Store, BookTemplate } from 'lucide-react'
+import { Plus, Code2, Rocket, Settings, Trash2, Store, BookTemplate, LogOut } from 'lucide-react'
 import { useProjects, useDeleteProject } from '../../api/queries.ts'
 import { CreateProjectDialog } from './CreateProjectDialog.tsx'
+import { useAuthStore } from '../../store/auth.ts'
 
 export function ProjectDashboard() {
   const [showCreate, setShowCreate] = useState(false)
   const { data: projects, isLoading } = useProjects()
   const deleteProject = useDeleteProject()
   const navigate = useNavigate()
+  const { user, logout } = useAuthStore()
 
   const languageColors: Record<string, string> = {
     JAVA: '#b07219',
@@ -46,6 +48,16 @@ export function ProjectDashboard() {
           <Link to="/templates" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '13px' }}>
             <BookTemplate size={14} /> Templates
           </Link>
+          <div style={{ marginLeft: '8px', paddingLeft: '16px', borderLeft: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{user?.userName || user?.email}</span>
+            <button
+              onClick={() => { logout(); navigate('/login') }}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '12px', cursor: 'pointer' }}
+              title="Sign out"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
         </nav>
       </header>
 
