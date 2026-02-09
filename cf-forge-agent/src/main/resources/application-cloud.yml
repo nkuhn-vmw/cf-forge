@@ -1,11 +1,8 @@
 spring:
-  ai:
-    openai:
-      base-url: ${vcap.services.cf-forge-genai.credentials.api_base}
-      api-key: ${vcap.services.cf-forge-genai.credentials.api_key}
-      chat:
-        options:
-          model: ${vcap.services.cf-forge-genai.credentials.model}
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
   datasource:
     url: ${vcap.services.cf-forge-db.credentials.jdbcUrl:}
     username: ${vcap.services.cf-forge-db.credentials.username:}
@@ -15,3 +12,9 @@ spring:
     port: ${vcap.services.cf-forge-mq.credentials.port:5672}
     username: ${vcap.services.cf-forge-mq.credentials.username:}
     password: ${vcap.services.cf-forge-mq.credentials.password:}
+  ai:
+    vectorstore:
+      pgvector:
+        dimensions: 768
+        distance-type: cosine_distance
+        index-type: hnsw

@@ -3,11 +3,13 @@ package com.cfforge.agent;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
 @EntityScan(basePackages = "com.cfforge.common.entity")
 @EnableJpaRepositories(basePackages = "com.cfforge.common.repository")
+@ComponentScan(basePackages = {"com.cfforge.agent", "com.cfforge.common"})
 public class CfForgeAgentApplication {
     public static void main(String[] args) {
         SpringApplication.run(CfForgeAgentApplication.class, args);

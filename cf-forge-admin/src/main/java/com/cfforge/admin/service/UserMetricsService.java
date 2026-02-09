@@ -4,7 +4,9 @@ import com.cfforge.common.repository.UserActivityRepository;
 import com.cfforge.common.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
@@ -24,11 +26,13 @@ public class UserMetricsService {
     }
 
     public long getActiveUsers(LocalDateTime since) {
-        return userActivityRepository.countDistinctActiveUsers(since);
+        Instant start = since.toInstant(ZoneOffset.UTC);
+        return userActivityRepository.countDistinctActiveUsers(start, Instant.now());
     }
 
     public List<Object[]> getTopActiveUsers(LocalDateTime since, int limit) {
-        return userActivityRepository.findTopActiveUsers(since,
+        Instant start = since.toInstant(ZoneOffset.UTC);
+        return userActivityRepository.findTopActiveUsers(start, Instant.now(),
             org.springframework.data.domain.PageRequest.of(0, limit));
     }
 

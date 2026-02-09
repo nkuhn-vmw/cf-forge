@@ -2,7 +2,7 @@ package com.cfforge.agent.service;
 
 import com.cfforge.agent.model.CfManifest;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.support.ResourceUtils;
+import org.springframework.ai.util.ResourceUtils;
 import org.springframework.stereotype.Service;
 
 @Service

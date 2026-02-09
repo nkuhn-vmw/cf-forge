@@ -1,9 +1,12 @@
 package com.cfforge.admin.service;
 
+import com.cfforge.common.enums.MetricGranularity;
 import com.cfforge.common.repository.MetricSnapshotRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Map;
 
 @Service
@@ -16,8 +19,10 @@ public class AgentMetricsService {
     }
 
     public Map<String, Object> getAgentMetrics(LocalDateTime from, LocalDateTime to) {
-        var generateMetrics = metricSnapshotRepository.aggregateByMetric("agent.generate", from, to);
-        var refineMetrics = metricSnapshotRepository.aggregateByMetric("agent.refine", from, to);
+        Instant start = from.toInstant(ZoneOffset.UTC);
+        Instant end = to.toInstant(ZoneOffset.UTC);
+        var generateMetrics = metricSnapshotRepository.aggregateByMetric(MetricGranularity.HOURLY, start, end);
+        var refineMetrics = metricSnapshotRepository.aggregateByMetric(MetricGranularity.HOURLY, start, end);
 
         long totalPrompts = 0;
         double avgDuration = 0;

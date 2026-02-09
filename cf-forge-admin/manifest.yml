@@ -1,7 +1,7 @@
 applications:
   - name: cf-forge-admin
     memory: 1G
-    instances: 2
+    instances: 1
     buildpack: java_buildpack_offline
     path: target/cf-forge-admin-0.1.0-SNAPSHOT.jar
     health-check-type: http
@@ -15,4 +15,4 @@ applications:
       - cf-forge-mq
       - cf-forge-sso
     routes:
-      - route: forge-admin.apps.example.com
+      - route: cf-forge-admin.apps.tas-ndc.kuhn-labs.com

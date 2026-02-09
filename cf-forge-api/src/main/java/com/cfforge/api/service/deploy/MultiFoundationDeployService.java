@@ -2,6 +2,7 @@ package com.cfforge.api.service.deploy;
 
 import com.cfforge.common.entity.CfTarget;
 import com.cfforge.common.entity.Project;
+import com.cfforge.common.enums.DeployStatus;
 import com.cfforge.common.repository.CfTargetRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -71,7 +72,7 @@ public class MultiFoundationDeployService {
             } catch (Exception e) {
                 log.error("Deployment to {} failed: {}", target.getApiEndpoint(), e.getMessage());
                 results.put(target.getId(), DeployResult.builder()
-                    .status("FAILED")
+                    .status(DeployStatus.FAILED)
                     .errorMessage(e.getMessage())
                     .build());
             }

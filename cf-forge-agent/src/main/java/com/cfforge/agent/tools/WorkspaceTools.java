@@ -20,8 +20,8 @@ public class WorkspaceTools {
 
     @Tool(description = "Read the content of a file in the project workspace")
     public String readFile(
-            @ToolParam("Project workspace ID") String workspaceId,
-            @ToolParam("File path relative to project root") String path) {
+            @ToolParam(description = "Project workspace ID") String workspaceId,
+            @ToolParam(description = "File path relative to project root") String path) {
         return workspaceClient.get()
             .uri("/workspace/{id}/files/{path}", workspaceId, path)
             .retrieve()
@@ -31,9 +31,9 @@ public class WorkspaceTools {
 
     @Tool(description = "Write or create a file in the project workspace")
     public String writeFile(
-            @ToolParam("Project workspace ID") String workspaceId,
-            @ToolParam("File path relative to project root") String path,
-            @ToolParam("File content") String content) {
+            @ToolParam(description = "Project workspace ID") String workspaceId,
+            @ToolParam(description = "File path relative to project root") String path,
+            @ToolParam(description = "File content") String content) {
         workspaceClient.put()
             .uri("/workspace/{id}/files/{path}", workspaceId, path)
             .bodyValue(content)
@@ -45,8 +45,8 @@ public class WorkspaceTools {
 
     @Tool(description = "List all files in the project workspace")
     public String listFiles(
-            @ToolParam("Project workspace ID") String workspaceId,
-            @ToolParam(value = "Directory path, defaults to root", required = false) String dir) {
+            @ToolParam(description = "Project workspace ID") String workspaceId,
+            @ToolParam(description = "Directory path, defaults to root", required = false) String dir) {
         return workspaceClient.get()
             .uri("/workspace/{id}/files?dir={dir}", workspaceId, dir != null ? dir : "")
             .retrieve()
@@ -56,8 +56,8 @@ public class WorkspaceTools {
 
     @Tool(description = "Delete a file from the project workspace")
     public String deleteFile(
-            @ToolParam("Project workspace ID") String workspaceId,
-            @ToolParam("File path to delete") String path) {
+            @ToolParam(description = "Project workspace ID") String workspaceId,
+            @ToolParam(description = "File path to delete") String path) {
         workspaceClient.delete()
             .uri("/workspace/{id}/files/{path}", workspaceId, path)
             .retrieve()

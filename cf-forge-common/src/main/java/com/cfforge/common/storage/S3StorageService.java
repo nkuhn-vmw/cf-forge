@@ -1,5 +1,6 @@
 package com.cfforge.common.storage;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -9,22 +10,22 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
-import jakarta.annotation.PostConstruct;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class S3StorageService {
 
-    @Value("${s3.endpoint:http://localhost:9000}")
+    @Value("${s3.endpoint:}")
     private String endpoint;
 
-    @Value("${s3.access-key:minioadmin}")
+    @Value("${s3.access-key:}")
     private String accessKey;
 
-    @Value("${s3.secret-key:minioadmin}")
+    @Value("${s3.secret-key:}")
     private String secretKey;
 
     @Value("${s3.region:us-east-1}")
@@ -33,17 +34,27 @@ public class S3StorageService {
     @Value("${s3.bucket:cf-forge-artifacts}")
     private String defaultBucket;
 
-    private S3Client s3Client;
+    private volatile S3Client s3Client;
 
-    @PostConstruct
-    public void init() {
-        this.s3Client = S3Client.builder()
-            .endpointOverride(URI.create(endpoint))
-            .region(Region.of(region))
-            .credentialsProvider(StaticCredentialsProvider.create(
-                AwsBasicCredentials.create(accessKey, secretKey)))
-            .forcePathStyle(true)
-            .build();
+    private S3Client getClient() {
+        if (s3Client == null) {
+            synchronized (this) {
+                if (s3Client == null) {
+                    if (endpoint == null || endpoint.isBlank()) {
+                        throw new IllegalStateException("S3 storage is not configured (s3.endpoint is not set)");
+                    }
+                    this.s3Client = S3Client.builder()
+                        .endpointOverride(URI.create(endpoint))
+                        .region(Region.of(region))
+                        .credentialsProvider(StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create(accessKey, secretKey)))
+                        .forcePathStyle(true)
+                        .build();
+                    log.info("S3 client initialized: endpoint={}, bucket={}", endpoint, defaultBucket);
+                }
+            }
+        }
+        return s3Client;
     }
 
     public void putObject(String key, byte[] content) {
@@ -51,14 +62,14 @@ public class S3StorageService {
     }
 
     public void putObject(String bucket, String key, byte[] content) {
-        s3Client.putObject(
+        getClient().putObject(
             PutObjectRequest.builder().bucket(bucket).key(key).build(),
             RequestBody.fromBytes(content)
         );
     }
 
     public void putObject(String key, InputStream inputStream, long contentLength) {
-        s3Client.putObject(
+        getClient().putObject(
             PutObjectRequest.builder().bucket(defaultBucket).key(key).build(),
             RequestBody.fromInputStream(inputStream, contentLength)
         );
@@ -69,7 +80,7 @@ public class S3StorageService {
     }
 
     public byte[] getObject(String bucket, String key) {
-        return s3Client.getObjectAsBytes(
+        return getClient().getObjectAsBytes(
             GetObjectRequest.builder().bucket(bucket).key(key).build()
         ).asByteArray();
     }
@@ -79,7 +90,7 @@ public class S3StorageService {
     }
 
     public void deleteObject(String bucket, String key) {
-        s3Client.deleteObject(
+        getClient().deleteObject(
             DeleteObjectRequest.builder().bucket(bucket).key(key).build()
         );
     }
@@ -89,7 +100,7 @@ public class S3StorageService {
     }
 
     public List<String> listObjects(String bucket, String prefix) {
-        ListObjectsV2Response response = s3Client.listObjectsV2(
+        ListObjectsV2Response response = getClient().listObjectsV2(
             ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).build()
         );
         return response.contents().stream()

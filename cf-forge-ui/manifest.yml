@@ -6,5 +6,7 @@ applications:
     buildpacks:
       - staticfile_buildpack
     path: dist
+    routes:
+      - route: cf-forge-ui.apps.tas-ndc.kuhn-labs.com
     env:
       FORCE_HTTPS: true

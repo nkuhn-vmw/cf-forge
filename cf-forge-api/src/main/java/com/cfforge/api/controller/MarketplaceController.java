@@ -18,7 +18,7 @@ public class MarketplaceController {
 
     @GetMapping("/services")
     public List<ServiceOffering> listServices() {
-        return cfClient.listMarketplace();
+        return cfClient.listMarketplace().collectList().block();
     }
 
     @PostMapping("/services/{serviceName}/provision")

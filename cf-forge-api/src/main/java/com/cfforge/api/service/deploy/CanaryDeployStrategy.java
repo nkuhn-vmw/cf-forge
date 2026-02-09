@@ -1,7 +1,7 @@
 package com.cfforge.api.service.deploy;
 
+import com.cfforge.common.enums.DeployStatus;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -42,7 +42,7 @@ public class CanaryDeployStrategy implements DeployStrategyInterface {
                 deployLog.append("Canary health check FAILED — rolling back\n");
                 rollback(ctx);
                 return DeployResult.builder()
-                    .status("FAILED")
+                    .status(DeployStatus.FAILED)
                     .log(deployLog.toString())
                     .errorMessage("Canary health check failed")
                     .durationMs(System.currentTimeMillis() - start)
@@ -63,7 +63,7 @@ public class CanaryDeployStrategy implements DeployStrategyInterface {
 
             String deployUrl = "https://" + appName + "." + domain;
             return DeployResult.builder()
-                .status("DEPLOYED")
+                .status(DeployStatus.DEPLOYED)
                 .deploymentUrl(deployUrl)
                 .log(deployLog.toString())
                 .durationMs(System.currentTimeMillis() - start)
@@ -73,7 +73,7 @@ public class CanaryDeployStrategy implements DeployStrategyInterface {
             deployLog.append("CANARY DEPLOY FAILED: ").append(e.getMessage()).append("\n");
             try { rollback(ctx); } catch (Exception ignored) {}
             return DeployResult.builder()
-                .status("FAILED")
+                .status(DeployStatus.FAILED)
                 .log(deployLog.toString())
                 .errorMessage(e.getMessage())
                 .durationMs(System.currentTimeMillis() - start)

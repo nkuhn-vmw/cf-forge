@@ -9,7 +9,7 @@ import com.cfforge.common.repository.BuildRepository;
 import com.cfforge.common.repository.DeploymentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.support.ResourceUtils;
+import org.springframework.ai.util.ResourceUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;

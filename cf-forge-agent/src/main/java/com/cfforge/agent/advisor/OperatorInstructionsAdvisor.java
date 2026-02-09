@@ -1,9 +1,15 @@
 package com.cfforge.agent.advisor;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.advisor.api.*;
+import org.springframework.ai.chat.client.ChatClientRequest;
+import org.springframework.ai.chat.client.ChatClientResponse;
+import org.springframework.ai.chat.client.advisor.api.CallAdvisor;
+import org.springframework.ai.chat.client.advisor.api.CallAdvisorChain;
+import org.springframework.ai.chat.client.advisor.api.StreamAdvisor;
+import org.springframework.ai.chat.client.advisor.api.StreamAdvisorChain;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,11 +24,11 @@ public class OperatorInstructionsAdvisor implements CallAdvisor, StreamAdvisor {
     private volatile long lastLoaded;
 
     @Override
-    public AdvisedResponse adviseCall(AdvisedRequest request, CallAdvisorChain chain) {
+    public ChatClientResponse adviseCall(ChatClientRequest request, CallAdvisorChain chain) {
         String instructions = loadInstructions();
         if (instructions != null) {
-            var augmented = AdvisedRequest.from(request)
-                .withSystemText(request.systemText() + "\n\nOPERATOR INSTRUCTIONS:\n" + instructions)
+            var augmented = request.mutate()
+                .prompt(request.prompt().augmentSystemMessage("\n\nOPERATOR INSTRUCTIONS:\n" + instructions))
                 .build();
             return chain.nextCall(augmented);
         }
@@ -30,11 +36,11 @@ public class OperatorInstructionsAdvisor implements CallAdvisor, StreamAdvisor {
     }
 
     @Override
-    public reactor.core.publisher.Flux<AdvisedResponse> adviseStream(AdvisedRequest request, StreamAdvisorChain chain) {
+    public Flux<ChatClientResponse> adviseStream(ChatClientRequest request, StreamAdvisorChain chain) {
         String instructions = loadInstructions();
         if (instructions != null) {
-            var augmented = AdvisedRequest.from(request)
-                .withSystemText(request.systemText() + "\n\nOPERATOR INSTRUCTIONS:\n" + instructions)
+            var augmented = request.mutate()
+                .prompt(request.prompt().augmentSystemMessage("\n\nOPERATOR INSTRUCTIONS:\n" + instructions))
                 .build();
             return chain.nextStream(augmented);
         }
@@ -50,12 +56,6 @@ public class OperatorInstructionsAdvisor implements CallAdvisor, StreamAdvisor {
             Path path = Path.of(INSTRUCTIONS_FILE);
             if (Files.exists(path)) {
                 cachedInstructions = Files.readString(path);
-                lastLoaded = now;
-                return cachedInstructions;
-            }
-            Path classpathFile = Path.of("classpath:" + INSTRUCTIONS_FILE);
-            if (Files.exists(classpathFile)) {
-                cachedInstructions = Files.readString(classpathFile);
                 lastLoaded = now;
                 return cachedInstructions;
             }

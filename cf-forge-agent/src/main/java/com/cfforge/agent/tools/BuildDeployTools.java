@@ -21,7 +21,7 @@ public class BuildDeployTools {
     }
 
     @Tool(description = "Trigger a build for the project (compile, test, scan, package)")
-    public String triggerBuild(@ToolParam("Project ID") String projectId) {
+    public String triggerBuild(@ToolParam(description = "Project ID") String projectId) {
         streamBridge.send("buildRequest-out-0",
             new BuildRequest(UUID.fromString(projectId), TriggerType.AGENT));
         return "Build triggered for project " + projectId;
@@ -29,8 +29,8 @@ public class BuildDeployTools {
 
     @Tool(description = "Deploy the project to a CF space (staging or production)")
     public String triggerDeploy(
-            @ToolParam("Project ID") String projectId,
-            @ToolParam("Environment: staging or production") String environment) {
+            @ToolParam(description = "Project ID") String projectId,
+            @ToolParam(description = "Environment: staging or production") String environment) {
         streamBridge.send("deployRequest-out-0",
             new DeployRequest(UUID.fromString(projectId), DeployEnvironment.valueOf(environment.toUpperCase())));
         return "Deployment triggered to " + environment;
