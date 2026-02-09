@@ -1,0 +1,339 @@
+name: Spring Boot + Spring AI RAG
+slug: spring-boot-ai-rag
+description: >
+  Retrieval-Augmented Generation (RAG) application with Spring AI 1.1. Includes
+  PGVector for document embeddings, document ingestion pipeline (PDF, text, HTML),
+  chat interface with contextual retrieval, and Spring Boot Actuator health checks.
+  Binds to CF GenAI tile and PostgreSQL with pgvector extension.
+category: ai
+language: java
+framework: spring-boot
+buildpack: java_buildpack_offline
+
+required_services:
+  - type: postgresql
+    plan_hint: small
+  - type: genai
+    plan_hint: standard
+
+manifest:
+  memory: 2G
+  disk_quota: 1G
+  instances: 1
+  health_check_type: http
+  health_check_http_endpoint: /actuator/health
+  env:
+    JBP_CONFIG_OPEN_JDK_JRE: "{ jre: { version: 21.+ } }"
+    SPRING_PROFILES_ACTIVE: cloud
+
+files:
+  - path: pom.xml
+    content: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <project xmlns="http://maven.apache.org/POM/4.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+          <modelVersion>4.0.0</modelVersion>
+          <parent>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-starter-parent</artifactId>
+              <version>3.4.2</version>
+          </parent>
+          <groupId>com.example</groupId>
+          <artifactId>rag-app</artifactId>
+          <version>0.0.1-SNAPSHOT</version>
+          <name>rag-app</name>
+          <properties>
+              <java.version>21</java.version>
+              <spring-ai.version>1.1.0</spring-ai.version>
+          </properties>
+          <dependencies>
+              <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-web</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.ai</groupId>
+                  <artifactId>spring-ai-starter-model-openai</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.ai</groupId>
+                  <artifactId>spring-ai-pgvector-store-spring-boot-starter</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.ai</groupId>
+                  <artifactId>spring-ai-tika-document-reader</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-data-jpa</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-actuator</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.postgresql</groupId>
+                  <artifactId>postgresql</artifactId>
+                  <scope>runtime</scope>
+              </dependency>
+          </dependencies>
+          <dependencyManagement>
+              <dependencies>
+                  <dependency>
+                      <groupId>org.springframework.ai</groupId>
+                      <artifactId>spring-ai-bom</artifactId>
+                      <version>${spring-ai.version}</version>
+                      <type>pom</type>
+                      <scope>import</scope>
+                  </dependency>
+              </dependencies>
+          </dependencyManagement>
+          <build>
+              <plugins>
+                  <plugin>
+                      <groupId>org.springframework.boot</groupId>
+                      <artifactId>spring-boot-maven-plugin</artifactId>
+                  </plugin>
+              </plugins>
+          </build>
+      </project>
+
+  - path: src/main/java/com/example/rag/RagApplication.java
+    content: |
+      package com.example.rag;
+
+      import org.springframework.boot.SpringApplication;
+      import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+      @SpringBootApplication
+      public class RagApplication {
+          public static void main(String[] args) {
+              SpringApplication.run(RagApplication.class, args);
+          }
+      }
+
+  - path: src/main/java/com/example/rag/config/AiConfig.java
+    content: |
+      package com.example.rag.config;
+
+      import org.springframework.ai.chat.client.ChatClient;
+      import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
+      import org.springframework.ai.vectorstore.SearchRequest;
+      import org.springframework.ai.vectorstore.VectorStore;
+      import org.springframework.context.annotation.Bean;
+      import org.springframework.context.annotation.Configuration;
+
+      @Configuration
+      public class AiConfig {
+
+          @Bean
+          public ChatClient chatClient(ChatClient.Builder builder, VectorStore vectorStore) {
+              return builder
+                  .defaultSystem("You are a helpful assistant. Answer questions using the provided context. "
+                      + "If the context doesn't contain relevant information, say so clearly.")
+                  .defaultAdvisors(
+                      QuestionAnswerAdvisor.builder(vectorStore)
+                          .searchRequest(SearchRequest.builder()
+                              .topK(5)
+                              .similarityThreshold(0.7)
+                              .build())
+                          .build()
+                  )
+                  .build();
+          }
+      }
+
+  - path: src/main/java/com/example/rag/controller/ChatController.java
+    content: |
+      package com.example.rag.controller;
+
+      import org.springframework.ai.chat.client.ChatClient;
+      import org.springframework.web.bind.annotation.*;
+      import reactor.core.publisher.Flux;
+
+      import java.util.Map;
+
+      @RestController
+      @RequestMapping("/api/chat")
+      public class ChatController {
+
+          private final ChatClient chatClient;
+
+          public ChatController(ChatClient chatClient) {
+              this.chatClient = chatClient;
+          }
+
+          @PostMapping
+          public Map<String, String> chat(@RequestBody Map<String, String> request) {
+              String answer = chatClient.prompt()
+                  .user(request.get("question"))
+                  .call()
+                  .content();
+              return Map.of("answer", answer);
+          }
+
+          @PostMapping(value = "/stream", produces = "text/event-stream")
+          public Flux<String> chatStream(@RequestBody Map<String, String> request) {
+              return chatClient.prompt()
+                  .user(request.get("question"))
+                  .stream()
+                  .content();
+          }
+      }
+
+  - path: src/main/java/com/example/rag/controller/IngestionController.java
+    content: |
+      package com.example.rag.controller;
+
+      import com.example.rag.service.DocumentIngestionService;
+      import org.springframework.web.bind.annotation.*;
+      import org.springframework.web.multipart.MultipartFile;
+
+      import java.util.Map;
+
+      @RestController
+      @RequestMapping("/api/documents")
+      public class IngestionController {
+
+          private final DocumentIngestionService ingestionService;
+
+          public IngestionController(DocumentIngestionService ingestionService) {
+              this.ingestionService = ingestionService;
+          }
+
+          @PostMapping("/upload")
+          public Map<String, Object> uploadDocument(@RequestParam("file") MultipartFile file) {
+              int chunks = ingestionService.ingestFile(file);
+              return Map.of(
+                  "filename", file.getOriginalFilename(),
+                  "chunks", chunks,
+                  "status", "ingested"
+              );
+          }
+
+          @PostMapping("/text")
+          public Map<String, Object> ingestText(@RequestBody Map<String, String> request) {
+              int chunks = ingestionService.ingestText(
+                  request.get("content"),
+                  request.getOrDefault("source", "manual-input")
+              );
+              return Map.of("chunks", chunks, "status", "ingested");
+          }
+      }
+
+  - path: src/main/java/com/example/rag/service/DocumentIngestionService.java
+    content: |
+      package com.example.rag.service;
+
+      import org.springframework.ai.document.Document;
+      import org.springframework.ai.reader.tika.TikaDocumentReader;
+      import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+      import org.springframework.ai.vectorstore.VectorStore;
+      import org.springframework.core.io.InputStreamResource;
+      import org.springframework.stereotype.Service;
+      import org.springframework.web.multipart.MultipartFile;
+
+      import java.io.IOException;
+      import java.util.List;
+      import java.util.Map;
+
+      @Service
+      public class DocumentIngestionService {
+
+          private final VectorStore vectorStore;
+          private final TokenTextSplitter splitter;
+
+          public DocumentIngestionService(VectorStore vectorStore) {
+              this.vectorStore = vectorStore;
+              this.splitter = new TokenTextSplitter(800, 200, 5, 10000, true);
+          }
+
+          public int ingestFile(MultipartFile file) {
+              try {
+                  var reader = new TikaDocumentReader(new InputStreamResource(file.getInputStream()));
+                  List<Document> documents = reader.get();
+                  documents.forEach(d -> d.getMetadata().put("source", file.getOriginalFilename()));
+                  List<Document> chunks = splitter.apply(documents);
+                  vectorStore.add(chunks);
+                  return chunks.size();
+              } catch (IOException e) {
+                  throw new RuntimeException("Failed to ingest file: " + e.getMessage(), e);
+              }
+          }
+
+          public int ingestText(String content, String source) {
+              Document doc = new Document(content, Map.of("source", source));
+              List<Document> chunks = splitter.apply(List.of(doc));
+              vectorStore.add(chunks);
+              return chunks.size();
+          }
+      }
+
+  - path: src/main/resources/application.yml
+    content: |
+      server:
+        port: 8080
+
+      spring:
+        datasource:
+          url: jdbc:postgresql://localhost:5432/ragapp
+          username: postgres
+          password: postgres
+        jpa:
+          hibernate:
+            ddl-auto: update
+        ai:
+          openai:
+            api-key: ${GENAI_API_KEY:sk-placeholder}
+            base-url: ${GENAI_BASE_URL:https://api.openai.com}
+          vectorstore:
+            pgvector:
+              initialize-schema: true
+              dimensions: 1536
+        servlet:
+          multipart:
+            max-file-size: 50MB
+            max-request-size: 50MB
+
+      management:
+        endpoints:
+          web:
+            exposure:
+              include: health,info,metrics
+
+  - path: src/main/resources/application-cloud.yml
+    content: |
+      spring:
+        ai:
+          openai:
+            api-key: ${vcap.services.genai-service.credentials.api_key}
+            base-url: ${vcap.services.genai-service.credentials.api_base}
+
+  - path: manifest.yml
+    content: |
+      ---
+      applications:
+        - name: rag-app
+          memory: 2G
+          disk_quota: 1G
+          instances: 1
+          buildpack: java_buildpack_offline
+          path: target/rag-app-0.0.1-SNAPSHOT.jar
+          health-check-type: http
+          health-check-http-endpoint: /actuator/health
+          services:
+            - rag-db
+            - genai-service
+          env:
+            JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
+            SPRING_PROFILES_ACTIVE: cloud
+
+  - path: .cfignore
+    content: |
+      .git/
+      .idea/
+      *.iml
+      src/
+      pom.xml
+      README.md

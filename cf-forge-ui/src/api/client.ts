@@ -91,8 +91,31 @@ export interface ProvisionRequest {
 }
 
 export interface DeployStrategy {
-  strategy: 'rolling' | 'blue-green'
+  strategy: 'rolling' | 'blue-green' | 'canary'
   environment: string
+}
+
+export interface CfFoundation {
+  id: string
+  endpoint: string
+  org: string
+  space: string
+  isDefault: boolean
+}
+
+export interface MigrationPlan {
+  sourceStack: string
+  targetStack: string
+  complexityScore: string
+  steps: { order: number; title: string; description: string; category: string; effort: string }[]
+  recommendedServices: string[]
+  risks: string[]
+}
+
+export interface AgentDefinition {
+  name: string
+  role: string
+  capabilities: string[]
 }
 
 export const api = {
@@ -165,5 +188,45 @@ export const api = {
     get: (slug: string) => request<Template>(`/templates/${slug}`),
     scaffold: (slug: string) =>
       request<Project>(`/templates/${slug}/scaffold`, { method: 'POST' }),
+    community: (page = 0, sort = 'popular') =>
+      request<{ content: Template[]; totalPages: number; totalElements: number }>(
+        `/templates/community?page=${page}&sort=${sort}`),
+    featured: () => request<Template[]>('/templates/featured'),
+    rate: (slug: string, rating: number) =>
+      request<Template>(`/templates/${slug}/rate`, {
+        method: 'POST', body: JSON.stringify({ rating }),
+      }),
+  },
+
+  foundations: {
+    list: () => request<CfFoundation[]>('/targets'),
+    create: (data: Partial<CfFoundation>) =>
+      request<CfFoundation>('/targets', { method: 'POST', body: JSON.stringify(data) }),
+    validate: (id: string) =>
+      request<{ status: string; apiVersion: string }>(`/targets/${id}/validate`, { method: 'POST' }),
+    setDefault: (id: string) =>
+      request<CfFoundation>(`/targets/${id}/set-default`, { method: 'POST' }),
+  },
+
+  migration: {
+    analyze: (data: { code: string; description: string; sourceStack: string }) =>
+      request<MigrationPlan>('/migration/analyze', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+  },
+
+  agents: {
+    list: () => request<AgentDefinition[]>('/agents'),
+    workflow: (task: string, agents: string[], context = '') =>
+      request<{ steps: { agentName: string; output: string }[]; durationMs: number }>(
+        '/agents/workflow', {
+          method: 'POST', body: JSON.stringify({ task, agents, context }),
+        }),
+  },
+
+  bench: {
+    evaluate: (code: string, prompt: string) =>
+      request<{ overallScore: number; correctnessScore: number; securityScore: number }>(
+        '/bench/evaluate', { method: 'POST', body: JSON.stringify({ code, prompt }) }),
   },
 }

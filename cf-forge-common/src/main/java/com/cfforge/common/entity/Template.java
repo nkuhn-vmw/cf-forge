@@ -51,6 +51,27 @@ public class Template {
     @Builder.Default
     private Integer downloadCount = 0;
 
+    // Community marketplace fields
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id")
+    private User author;
+
+    @Column(name = "is_community")
+    @Builder.Default
+    private Boolean community = false;
+
+    @Column(name = "is_verified")
+    @Builder.Default
+    private Boolean verified = false;
+
+    @Column(name = "rating_sum")
+    @Builder.Default
+    private Integer ratingSum = 0;
+
+    @Column(name = "rating_count")
+    @Builder.Default
+    private Integer ratingCount = 0;
+
     @Column(name = "created_at")
     @Builder.Default
     private Instant createdAt = Instant.now();

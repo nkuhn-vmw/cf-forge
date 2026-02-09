@@ -4,6 +4,7 @@ import { WorkspaceLayout } from './routes/workspace/WorkspaceLayout.tsx'
 import { ConversationalBuilder } from './routes/builder/ConversationalBuilder.tsx'
 import { Marketplace } from './routes/marketplace/Marketplace.tsx'
 import { Templates } from './routes/templates/Templates.tsx'
+import { MigrationAssistant } from './routes/migration/MigrationAssistant.tsx'
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <Route path="/builder" element={<ConversationalBuilder />} />
       <Route path="/marketplace" element={<Marketplace />} />
       <Route path="/templates" element={<Templates />} />
+      <Route path="/migration" element={<MigrationAssistant />} />
     </Routes>
   )
 }
