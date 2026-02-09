@@ -8,5 +8,6 @@ applications:
     path: dist
     routes:
       - route: cf-forge-ui.apps.tas-ndc.kuhn-labs.com
+    log-rate-limit-per-second: -1
     env:
       FORCE_HTTPS: true

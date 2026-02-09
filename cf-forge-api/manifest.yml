@@ -6,6 +6,7 @@ applications:
     path: target/cf-forge-api-0.1.0-SNAPSHOT.jar
     health-check-type: http
     health-check-http-endpoint: /actuator/health
+    log-rate-limit-per-second: -1
     env:
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
       SPRING_PROFILES_ACTIVE: cloud
