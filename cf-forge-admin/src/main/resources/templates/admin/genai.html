@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{admin/layout :: layout(~{::title}, ~{::content})}">
+<title>GenAI Usage - CF Forge Admin</title>
+<div th:fragment="content" id="content">
+    <h2>GenAI Usage Metrics</h2>
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-value" th:text="${metrics.requestVolume}">0</div>
+            <div class="metric-label">Request Volume</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" th:text="${metrics.avgLatencyMs + 'ms'}">0ms</div>
+            <div class="metric-label">Avg Latency</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" th:text="${metrics.p95LatencyMs + 'ms'}">0ms</div>
+            <div class="metric-label">P95 Latency</div>
+        </div>
+    </div>
+    <h3>Request Volume Over Time</h3>
+    <canvas id="genaiChart" width="400" height="200"></canvas>
+</div>
+</html>

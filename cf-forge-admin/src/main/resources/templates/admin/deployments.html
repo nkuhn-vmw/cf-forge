@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{admin/layout :: layout(~{::title}, ~{::content})}">
+<title>Deployments - CF Forge Admin</title>
+<div th:fragment="content" id="content">
+    <h2>Deployment Metrics</h2>
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-value" th:text="${metrics.totalDeploys}">0</div>
+            <div class="metric-label">Total Deployments</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" th:text="${metrics.successRate + '%'}">0%</div>
+            <div class="metric-label">Success Rate</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" th:text="${metrics.rollbacks}">0</div>
+            <div class="metric-label">Rollbacks</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" th:text="${metrics.failedDeploys}">0</div>
+            <div class="metric-label">Failed</div>
+        </div>
+    </div>
+    <h3>By Strategy</h3>
+    <canvas id="strategyChart" width="400" height="200"></canvas>
+    <h3>By Environment</h3>
+    <canvas id="envChart" width="400" height="200"></canvas>
+</div>
+</html>

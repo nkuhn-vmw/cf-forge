@@ -1,23 +1,28 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Send, Bot, User, ArrowLeft, Sparkles } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Send, Bot, User, ArrowLeft, Sparkles, FolderPlus, Loader2 } from 'lucide-react'
 import { api } from '../../api/client.ts'
+import { useCreateProject } from '../../api/queries.ts'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
+  projectReady?: boolean
 }
 
 export function ConversationalBuilder() {
+  const navigate = useNavigate()
+  const createProject = useCreateProject()
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
       content:
-        'Welcome to the CF Forge Builder! Describe the application you want to create, and I\'ll help you build and deploy it to Cloud Foundry.\n\nFor example:\n- "Create a Spring Boot REST API with PostgreSQL"\n- "Build a React dashboard with authentication"\n- "Set up a Python Flask microservice"',
+        'Welcome to the CF Forge Builder! Describe the application you want to create, and I\'ll help you build and deploy it to Cloud Foundry.\n\nFor example:\n- "Create a Spring Boot REST API with PostgreSQL"\n- "Build a React dashboard with authentication"\n- "Set up a Python Flask microservice with Redis caching"',
     },
   ])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
+  const [generatedProject, setGeneratedProject] = useState<{ name: string; language: string; framework: string } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -51,13 +56,45 @@ export function ConversationalBuilder() {
     eventSource.onerror = () => {
       eventSource.close()
       setStreaming(false)
+
       if (!response) {
         setMessages((prev) => {
           const updated = [...prev]
           updated[updated.length - 1] = { role: 'assistant', content: 'Connection error. Please try again.' }
           return updated
         })
+      } else {
+        // Parse project info from response if it looks like a generation result
+        const nameMatch = response.match(/project[:\s]+["']?([a-zA-Z0-9-]+)["']?/i)
+        const langMatch = response.match(/language[:\s]+["']?(\w+)["']?/i)
+        const fwMatch = response.match(/framework[:\s]+["']?([a-zA-Z0-9.]+)["']?/i)
+        if (nameMatch) {
+          setGeneratedProject({
+            name: nameMatch[1],
+            language: langMatch?.[1] ?? 'java',
+            framework: fwMatch?.[1] ?? '',
+          })
+          setMessages((prev) => {
+            const updated = [...prev]
+            updated[updated.length - 1] = { ...updated[updated.length - 1], projectReady: true }
+            return updated
+          })
+        }
       }
+    }
+  }
+
+  const handleCreateProject = async () => {
+    if (!generatedProject) return
+    try {
+      const project = await createProject.mutateAsync({
+        name: generatedProject.name,
+        language: generatedProject.language,
+        framework: generatedProject.framework,
+      })
+      navigate(`/workspace/${project.id}`)
+    } catch {
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Failed to create project. Please try again.' }])
     }
   }
 
@@ -78,38 +115,60 @@ export function ConversationalBuilder() {
         </Link>
         <Sparkles size={20} color="var(--accent)" />
         <h1 style={{ fontSize: '16px', fontWeight: 600 }}>Conversational Builder</h1>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '2px 8px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '4px' }}>
+          AI-Powered
+        </span>
       </header>
 
       <div style={{ flex: 1, overflow: 'auto', maxWidth: '800px', width: '100%', margin: '0 auto', padding: '24px' }} ref={scrollRef}>
         {messages.map((msg, i) => (
-          <div key={i} style={{ marginBottom: '20px', display: 'flex', gap: '12px' }}>
-            <div
-              style={{
-                width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                backgroundColor: msg.role === 'user' ? 'var(--accent)' : 'var(--bg-tertiary)',
-              }}
-            >
-              {msg.role === 'user' ? <User size={16} color="white" /> : <Bot size={16} color="var(--success)" />}
+          <div key={i} style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div
+                style={{
+                  width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: msg.role === 'user' ? 'var(--accent)' : 'var(--bg-tertiary)',
+                }}
+              >
+                {msg.role === 'user' ? <User size={16} color="white" /> : <Bot size={16} color="var(--success)" />}
+              </div>
+              <div
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: msg.role === 'user' ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  lineHeight: '1.7',
+                  color: 'var(--text-primary)',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  maxWidth: '640px',
+                }}
+              >
+                {msg.content}
+                {streaming && i === messages.length - 1 && msg.role === 'assistant' && (
+                  <span style={{ color: 'var(--accent)' }}>|</span>
+                )}
+              </div>
             </div>
-            <div
-              style={{
-                padding: '12px 16px',
-                backgroundColor: msg.role === 'user' ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
-                borderRadius: '8px',
-                fontSize: '14px',
-                lineHeight: '1.7',
-                color: 'var(--text-primary)',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                maxWidth: '640px',
-              }}
-            >
-              {msg.content}
-              {streaming && i === messages.length - 1 && msg.role === 'assistant' && (
-                <span style={{ color: 'var(--accent)' }}>|</span>
-              )}
-            </div>
+            {msg.projectReady && (
+              <div style={{ marginLeft: '44px', marginTop: '8px' }}>
+                <button
+                  onClick={handleCreateProject}
+                  disabled={createProject.isPending}
+                  style={{
+                    padding: '8px 16px', backgroundColor: 'var(--success)', border: 'none',
+                    borderRadius: '6px', color: 'white', display: 'flex', alignItems: 'center',
+                    gap: '6px', fontSize: '13px', fontWeight: 500,
+                    opacity: createProject.isPending ? 0.6 : 1,
+                  }}
+                >
+                  {createProject.isPending ? <Loader2 size={14} className="spin" /> : <FolderPlus size={14} />}
+                  Create Project & Open Workspace
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

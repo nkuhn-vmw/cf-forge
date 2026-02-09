@@ -1,0 +1,35 @@
+name: Spring Boot + Spring AI Chatbot
+slug: spring-boot-ai-chatbot
+description: >
+  Spring Boot 3.4 chatbot powered by Spring AI 1.1 with GenAI on Tanzu Platform.
+  Includes ChatClient, conversation memory, and streaming responses.
+category: ai
+language: java
+framework: spring-boot
+buildpack: java_buildpack_offline
+
+required_services:
+  - type: postgresql
+    plan_hint: small
+  - type: genai
+    plan_hint: standard
+
+manifest:
+  memory: 2G
+  disk_quota: 1G
+  instances: 1
+  health_check_type: http
+  health_check_http_endpoint: /actuator/health
+  env:
+    JBP_CONFIG_OPEN_JDK_JRE: "{ jre: { version: 21.+ } }"
+    SPRING_PROFILES_ACTIVE: cloud
+
+files:
+  - path: pom.xml
+  - path: src/main/java/com/example/chatbot/ChatbotApplication.java
+  - path: src/main/java/com/example/chatbot/config/AiConfig.java
+  - path: src/main/java/com/example/chatbot/controller/ChatController.java
+  - path: src/main/resources/application.yml
+  - path: src/main/resources/application-cloud.yml
+  - path: src/main/resources/prompts/system.st
+  - path: manifest.yml

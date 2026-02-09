@@ -1,0 +1,30 @@
+name: Flask REST API
+slug: flask-api
+description: >
+  Python Flask REST API with SQLAlchemy, Gunicorn, and CF service bindings
+  via cfenv. Production-ready with health checks and structured logging.
+category: microservice
+language: python
+framework: flask
+buildpack: python_buildpack
+
+required_services:
+  - type: postgresql
+    plan_hint: small
+
+manifest:
+  memory: 256M
+  disk_quota: 512M
+  instances: 2
+  health_check_type: http
+  health_check_http_endpoint: /health
+
+files:
+  - path: app.py
+  - path: requirements.txt
+  - path: runtime.txt
+  - path: Procfile
+  - path: config.py
+  - path: models.py
+  - path: manifest.yml
+  - path: .cfignore

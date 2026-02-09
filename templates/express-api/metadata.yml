@@ -1,0 +1,30 @@
+name: Express.js REST API
+slug: express-api
+description: >
+  Node.js Express REST API with PostgreSQL (pg), health checks, and
+  CF VCAP_SERVICES auto-configuration. Production-ready with PM2.
+category: microservice
+language: nodejs
+framework: express
+buildpack: nodejs_buildpack
+
+required_services:
+  - type: postgresql
+    plan_hint: small
+
+manifest:
+  memory: 256M
+  disk_quota: 512M
+  instances: 2
+  health_check_type: http
+  health_check_http_endpoint: /health
+
+files:
+  - path: package.json
+  - path: src/index.js
+  - path: src/routes/items.js
+  - path: src/db.js
+  - path: src/config.js
+  - path: Procfile
+  - path: manifest.yml
+  - path: .cfignore

@@ -1,0 +1,31 @@
+name: Spring Boot + React Full-Stack
+slug: spring-boot-react-fullstack
+description: >
+  Full-stack template with a Spring Boot 3.4 REST API backend and React 18
+  SPA frontend, deployed as two CF apps with service bindings.
+category: full-stack
+language: java
+framework: spring-boot
+buildpack: java_buildpack_offline
+
+required_services:
+  - type: postgresql
+    plan_hint: small
+
+manifest:
+  memory: 1G
+  disk_quota: 512M
+  instances: 2
+  health_check_type: http
+  health_check_http_endpoint: /actuator/health
+  env:
+    JBP_CONFIG_OPEN_JDK_JRE: "{ jre: { version: 21.+ } }"
+
+files:
+  - path: backend/pom.xml
+  - path: backend/src/main/java/com/example/app/Application.java
+  - path: backend/manifest.yml
+  - path: frontend/package.json
+  - path: frontend/src/main.tsx
+  - path: frontend/manifest.yml
+  - path: frontend/Staticfile

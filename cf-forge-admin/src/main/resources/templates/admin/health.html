@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{admin/layout :: layout(~{::title}, ~{::content})}">
+<title>Health - CF Forge Admin</title>
+<div th:fragment="content" id="content">
+    <h2>Component Health</h2>
+    <table class="data-table">
+        <thead><tr><th>Component</th><th>Status</th><th>Last Checked</th></tr></thead>
+        <tbody>
+            <tr th:each="health : ${healthData}">
+                <td th:text="${health[0]}">component</td>
+                <td>
+                    <span th:class="${health[1] == 'UP' ? 'status-up' : 'status-down'}"
+                          th:text="${health[1]}">UP</span>
+                </td>
+                <td th:text="${health[2]}">timestamp</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+</html>

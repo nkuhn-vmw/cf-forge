@@ -1,0 +1,27 @@
+name: Static React SPA
+slug: static-react-spa
+description: >
+  React 18 single-page application with Vite, Tailwind CSS, and React Router.
+  Deployed with staticfile_buildpack and nginx pushstate routing.
+category: frontend
+language: javascript
+framework: react
+buildpack: staticfile_buildpack
+
+manifest:
+  memory: 64M
+  disk_quota: 256M
+  instances: 2
+  health_check_type: port
+
+files:
+  - path: package.json
+  - path: vite.config.ts
+  - path: tsconfig.json
+  - path: index.html
+  - path: src/main.tsx
+  - path: src/App.tsx
+  - path: src/index.css
+  - path: Staticfile
+  - path: manifest.yml
+  - path: .cfignore

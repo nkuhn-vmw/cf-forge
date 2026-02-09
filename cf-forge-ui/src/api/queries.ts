@@ -94,3 +94,28 @@ export function useMarketplace() {
     queryFn: api.marketplace.services,
   })
 }
+
+export function useServiceRecommendations(projectId: string) {
+  return useQuery({
+    queryKey: ['marketplace', 'recommend', projectId],
+    queryFn: () => api.marketplace.recommend(projectId),
+    enabled: !!projectId,
+  })
+}
+
+export function useProvisionService(projectId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { serviceName: string; plan: string; instanceName: string }) =>
+      api.marketplace.provision(projectId, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['marketplace'] }),
+  })
+}
+
+export function useScaffoldTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (slug: string) => api.templates.scaffold(slug),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
+  })
+}

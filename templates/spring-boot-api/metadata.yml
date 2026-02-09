@@ -1,0 +1,34 @@
+name: Spring Boot REST API
+slug: spring-boot-api
+description: >
+  Production-ready Spring Boot 3.4 REST API with Spring Security (OAuth2/UAA),
+  Spring Data JPA, Actuator health, and CF service bindings.
+category: microservice
+language: java
+framework: spring-boot
+buildpack: java_buildpack_offline
+
+required_services:
+  - type: postgresql
+    plan_hint: small
+
+manifest:
+  memory: 1G
+  disk_quota: 512M
+  instances: 2
+  health_check_type: http
+  health_check_http_endpoint: /actuator/health
+  env:
+    JBP_CONFIG_OPEN_JDK_JRE: "{ jre: { version: 21.+ } }"
+    SPRING_PROFILES_ACTIVE: cloud
+
+files:
+  - path: pom.xml
+  - path: src/main/java/com/example/app/Application.java
+  - path: src/main/java/com/example/app/controller/ItemController.java
+  - path: src/main/java/com/example/app/model/Item.java
+  - path: src/main/java/com/example/app/repository/ItemRepository.java
+  - path: src/main/resources/application.yml
+  - path: src/main/resources/application-cloud.yml
+  - path: manifest.yml
+  - path: .cfignore

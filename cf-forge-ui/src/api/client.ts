@@ -74,6 +74,25 @@ export interface ServiceOffering {
   name: string
   description: string
   plans: string[]
+  tags?: string[]
+}
+
+export interface ServiceRecommendation {
+  serviceName: string
+  plan: string
+  reason: string
+  bindingName: string
+}
+
+export interface ProvisionRequest {
+  serviceName: string
+  plan: string
+  instanceName: string
+}
+
+export interface DeployStrategy {
+  strategy: 'rolling' | 'blue-green'
+  environment: string
 }
 
 export const api = {
@@ -132,10 +151,19 @@ export const api = {
 
   marketplace: {
     services: () => request<ServiceOffering[]>('/marketplace/services'),
+    recommend: (projectId: string) =>
+      request<ServiceRecommendation[]>(`/marketplace/recommend?projectId=${projectId}`),
+    provision: (projectId: string, data: ProvisionRequest) =>
+      request<void>(`/projects/${projectId}/services`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 
   templates: {
     list: () => request<Template[]>('/templates'),
     get: (slug: string) => request<Template>(`/templates/${slug}`),
+    scaffold: (slug: string) =>
+      request<Project>(`/templates/${slug}/scaffold`, { method: 'POST' }),
   },
 }

@@ -1,0 +1,29 @@
+name: Go Gin Microservice
+slug: go-gin-api
+description: >
+  Go microservice using the Gin framework with PostgreSQL, health checks,
+  and CF VCAP_SERVICES parsing. Lightweight and fast.
+category: microservice
+language: go
+framework: gin
+buildpack: go_buildpack
+
+required_services:
+  - type: postgresql
+    plan_hint: small
+
+manifest:
+  memory: 128M
+  disk_quota: 256M
+  instances: 2
+  health_check_type: http
+  health_check_http_endpoint: /health
+
+files:
+  - path: go.mod
+  - path: main.go
+  - path: handlers/items.go
+  - path: db/postgres.go
+  - path: config/vcap.go
+  - path: manifest.yml
+  - path: .cfignore
