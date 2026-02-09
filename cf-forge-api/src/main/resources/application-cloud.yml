@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: ${vcap.services.cf-forge-db.credentials.jdbcUrl:}
+    username: ${vcap.services.cf-forge-db.credentials.username:}
+    password: ${vcap.services.cf-forge-db.credentials.password:}
+  data:
+    redis:
+      host: ${vcap.services.cf-forge-cache.credentials.host:}
+      port: ${vcap.services.cf-forge-cache.credentials.port:6379}
+      password: ${vcap.services.cf-forge-cache.credentials.password:}
+  rabbitmq:
+    host: ${vcap.services.cf-forge-mq.credentials.hostname:}
+    port: ${vcap.services.cf-forge-mq.credentials.port:5672}
+    username: ${vcap.services.cf-forge-mq.credentials.username:}
+    password: ${vcap.services.cf-forge-mq.credentials.password:}
+    virtual-host: ${vcap.services.cf-forge-mq.credentials.vhost:/}

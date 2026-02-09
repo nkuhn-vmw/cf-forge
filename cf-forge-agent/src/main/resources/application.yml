@@ -1,0 +1,76 @@
+spring:
+  application:
+    name: cf-forge-agent
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cfforge
+    username: cfforge
+    password: cfforge
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: false
+  ai:
+    openai:
+      base-url: ${GENAI_BASE_URL:http://localhost:11434/v1}
+      api-key: ${GENAI_API_KEY:not-needed-for-ollama}
+      chat:
+        options:
+          model: ${GENAI_MODEL:llama3}
+          temperature: 0.2
+          max-tokens: 8192
+      embedding:
+        options:
+          model: ${GENAI_EMBEDDING_MODEL:nomic-embed-text}
+    chat:
+      memory:
+        repository:
+          jdbc:
+            enabled: true
+    vectorstore:
+      pgvector:
+        dimensions: 768
+        distance-type: cosine_distance
+        index-type: hnsw
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  cloud:
+    stream:
+      bindings:
+        agentGenerate-in-0:
+          destination: cf-forge.agent.generate
+          group: agent-consumers
+        agentRefine-in-0:
+          destination: cf-forge.agent.refine
+          group: agent-consumers
+        metricEvent-out-0:
+          destination: cf-forge.metrics
+      rabbit:
+        bindings:
+          agentGenerate-in-0:
+            consumer:
+              auto-bind-dlq: true
+              republish-to-dlq: true
+
+s3:
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: cf-forge-artifacts
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always

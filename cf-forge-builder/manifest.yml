@@ -1,0 +1,18 @@
+applications:
+  - name: cf-forge-builder
+    memory: 2G
+    instances: 2
+    buildpack: java_buildpack_offline
+    path: target/cf-forge-builder-0.1.0-SNAPSHOT.jar
+    health-check-type: http
+    health-check-http-endpoint: /actuator/health
+    no-route: true
+    env:
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
+      SPRING_PROFILES_ACTIVE: cloud
+    services:
+      - cf-forge-mq
+      - cf-forge-object-store
+      - cf-forge-db
+    routes:
+      - route: cf-forge-builder.apps.internal

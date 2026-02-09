@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: cf-forge-admin
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cfforge
+    username: cfforge
+    password: cfforge
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: false
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  cloud:
+    stream:
+      bindings:
+        metricEvent-in-0:
+          destination: cf-forge.metrics
+          group: admin-consumers
+  security:
+    oauth2:
+      client:
+        registration:
+          sso:
+            client-id: ${SSO_CLIENT_ID:local-dev-client}
+            client-secret: ${SSO_CLIENT_SECRET:local-dev-secret}
+            scope: openid,profile,email,roles,cfforge.admin
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          sso:
+            issuer-uri: ${SSO_ISSUER_URI:http://localhost:8080/uaa/oauth/token}
+            user-name-attribute: user_name
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always

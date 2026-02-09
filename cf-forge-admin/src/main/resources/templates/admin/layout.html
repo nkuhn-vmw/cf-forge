@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CF Forge Admin</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo"><h2>CF Forge Admin</h2></div>
+        <ul>
+            <li><a th:href="@{/admin/}" th:classappend="${#strings.equals(currentPage, 'overview')} ? 'active'">Overview</a></li>
+            <li><a th:href="@{/admin/users}" th:classappend="${#strings.equals(currentPage, 'users')} ? 'active'">Users</a></li>
+            <li><a th:href="@{/admin/agent}" th:classappend="${#strings.equals(currentPage, 'agent')} ? 'active'">AI Agent</a></li>
+            <li><a th:href="@{/admin/deployments}" th:classappend="${#strings.equals(currentPage, 'deployments')} ? 'active'">Deployments</a></li>
+            <li><a th:href="@{/admin/builds}" th:classappend="${#strings.equals(currentPage, 'builds')} ? 'active'">Builds</a></li>
+            <li><a th:href="@{/admin/genai}" th:classappend="${#strings.equals(currentPage, 'genai')} ? 'active'">GenAI Usage</a></li>
+            <li><a th:href="@{/admin/health}" th:classappend="${#strings.equals(currentPage, 'health')} ? 'active'">Health</a></li>
+            <li><a th:href="@{/admin/audit}" th:classappend="${#strings.equals(currentPage, 'audit')} ? 'active'">Audit Log</a></li>
+        </ul>
+    </nav>
+    <main class="content">
+        <div layout:fragment="content"></div>
+    </main>
+    <script th:src="@{/js/charts.js}"></script>
+</body>
+</html>

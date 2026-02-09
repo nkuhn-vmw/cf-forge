@@ -1,0 +1,79 @@
+spring:
+  application:
+    name: cf-forge-api
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cfforge
+    username: cfforge
+    password: cfforge
+    hikari:
+      maximum-pool-size: 20
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  cloud:
+    stream:
+      bindings:
+        deployRequest-in-0:
+          destination: cf-forge.deploy.request
+          group: deploy-consumers
+        notification-out-0:
+          destination: cf-forge.notifications
+        metricEvent-out-0:
+          destination: cf-forge.metrics
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SSO_ISSUER_URI:http://localhost:8080/uaa/oauth/token}
+      client:
+        registration:
+          sso:
+            client-id: ${SSO_CLIENT_ID:local-dev-client}
+            client-secret: ${SSO_CLIENT_SECRET:local-dev-secret}
+            scope: openid,profile,email,roles,cfforge.admin
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          sso:
+            issuer-uri: ${SSO_ISSUER_URI:http://localhost:8080/uaa/oauth/token}
+            user-name-attribute: user_name
+
+cf:
+  api:
+    endpoint: ${CF_API_ENDPOINT:https://api.sys.example.com}
+  forge:
+    domain: ${CF_FORGE_DOMAIN:http://localhost:5173}
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  info:
+    git:
+      mode: full

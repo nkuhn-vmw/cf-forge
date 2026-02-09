@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout}">
+<head><title>Overview - CF Forge Admin</title></head>
+<body>
+<div layout:fragment="content">
+    <h1>System Overview</h1>
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <h3>Active Users (24h)</h3>
+            <span class="metric-value" th:text="${activeUsers}">0</span>
+        </div>
+        <div class="metric-card">
+            <h3>Audit Events (24h)</h3>
+            <span class="metric-value" th:text="${auditCount}">0</span>
+        </div>
+    </div>
+    <h2>Component Health</h2>
+    <div class="health-grid">
+        <div th:each="health : ${healthStatus}" class="health-card">
+            <span th:text="${health[0]}" class="component-name">Component</span>
+            <span th:text="${health[1]}" th:class="'health-status status-' + ${health[1]}">UP</span>
+        </div>
+    </div>
+</div>
+</body>
+</html>

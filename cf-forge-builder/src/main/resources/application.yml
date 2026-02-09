@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: cf-forge-builder
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cfforge
+    username: cfforge
+    password: cfforge
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  cloud:
+    stream:
+      bindings:
+        buildRequest-in-0:
+          destination: cf-forge.build.request
+          group: builder-consumers
+        metricEvent-out-0:
+          destination: cf-forge.metrics
+      rabbit:
+        bindings:
+          buildRequest-in-0:
+            consumer:
+              auto-bind-dlq: true
+              republish-to-dlq: true
+
+s3:
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: cf-forge-artifacts
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always

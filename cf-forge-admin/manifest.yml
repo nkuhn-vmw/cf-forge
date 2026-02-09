@@ -1,0 +1,18 @@
+applications:
+  - name: cf-forge-admin
+    memory: 1G
+    instances: 2
+    buildpack: java_buildpack_offline
+    path: target/cf-forge-admin-0.1.0-SNAPSHOT.jar
+    health-check-type: http
+    health-check-http-endpoint: /actuator/health
+    env:
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
+      SPRING_PROFILES_ACTIVE: cloud
+    services:
+      - cf-forge-db
+      - cf-forge-cache
+      - cf-forge-mq
+      - cf-forge-sso
+    routes:
+      - route: forge-admin.apps.example.com

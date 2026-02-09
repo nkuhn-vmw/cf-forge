@@ -1,0 +1,10 @@
+---
+applications:
+  - name: cf-forge-ui
+    memory: 64M
+    instances: 2
+    buildpacks:
+      - staticfile_buildpack
+    path: dist
+    env:
+      FORCE_HTTPS: true
