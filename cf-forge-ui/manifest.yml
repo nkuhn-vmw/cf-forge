@@ -4,7 +4,7 @@ applications:
     memory: 64M
     instances: 2
     buildpacks:
-      - staticfile_buildpack
+      - nginx_buildpack
     path: dist
     routes:
       - route: cf-forge-ui.apps.tas-ndc.kuhn-labs.com
