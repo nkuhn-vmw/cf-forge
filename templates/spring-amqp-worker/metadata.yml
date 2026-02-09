@@ -1,0 +1,286 @@
+name: Spring AMQP Worker
+slug: spring-amqp-worker
+description: >
+  Background worker service using Spring AMQP (RabbitMQ) for message-driven processing.
+  Includes dead-letter queues, retry with exponential backoff, health checks, and
+  CF service bindings. Ideal for async task processing on Cloud Foundry.
+category: worker
+language: java
+framework: spring-boot
+buildpack: java_buildpack_offline
+
+required_services:
+  - type: rabbitmq
+    plan_hint: standard
+
+manifest:
+  memory: 768M
+  disk_quota: 512M
+  instances: 2
+  health_check_type: http
+  health_check_http_endpoint: /actuator/health
+  no-route: true
+  env:
+    JBP_CONFIG_OPEN_JDK_JRE: "{ jre: { version: 21.+ } }"
+    SPRING_PROFILES_ACTIVE: cloud
+
+files:
+  - path: pom.xml
+    content: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <project xmlns="http://maven.apache.org/POM/4.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+          <modelVersion>4.0.0</modelVersion>
+          <parent>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-starter-parent</artifactId>
+              <version>3.4.2</version>
+          </parent>
+          <groupId>com.example</groupId>
+          <artifactId>amqp-worker</artifactId>
+          <version>0.0.1-SNAPSHOT</version>
+          <name>amqp-worker</name>
+          <dependencies>
+              <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-amqp</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-actuator</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-web</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>com.fasterxml.jackson.core</groupId>
+                  <artifactId>jackson-databind</artifactId>
+              </dependency>
+          </dependencies>
+          <build>
+              <plugins>
+                  <plugin>
+                      <groupId>org.springframework.boot</groupId>
+                      <artifactId>spring-boot-maven-plugin</artifactId>
+                  </plugin>
+              </plugins>
+          </build>
+      </project>
+
+  - path: src/main/java/com/example/worker/WorkerApplication.java
+    content: |
+      package com.example.worker;
+
+      import org.springframework.boot.SpringApplication;
+      import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+      @SpringBootApplication
+      public class WorkerApplication {
+          public static void main(String[] args) {
+              SpringApplication.run(WorkerApplication.class, args);
+          }
+      }
+
+  - path: src/main/java/com/example/worker/config/RabbitConfig.java
+    content: |
+      package com.example.worker.config;
+
+      import org.springframework.amqp.core.*;
+      import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+      import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+      import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
+      import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+      import org.springframework.context.annotation.Bean;
+      import org.springframework.context.annotation.Configuration;
+      import org.springframework.retry.backoff.ExponentialBackOffPolicy;
+      import org.springframework.retry.policy.SimpleRetryPolicy;
+      import org.springframework.retry.support.RetryTemplate;
+
+      @Configuration
+      public class RabbitConfig {
+
+          public static final String WORK_QUEUE = "work.queue";
+          public static final String WORK_EXCHANGE = "work.exchange";
+          public static final String DLQ = "work.queue.dlq";
+          public static final String DLX = "work.exchange.dlx";
+
+          @Bean
+          public TopicExchange workExchange() {
+              return new TopicExchange(WORK_EXCHANGE);
+          }
+
+          @Bean
+          public TopicExchange deadLetterExchange() {
+              return new TopicExchange(DLX);
+          }
+
+          @Bean
+          public Queue workQueue() {
+              return QueueBuilder.durable(WORK_QUEUE)
+                  .withArgument("x-dead-letter-exchange", DLX)
+                  .withArgument("x-dead-letter-routing-key", "dead")
+                  .build();
+          }
+
+          @Bean
+          public Queue deadLetterQueue() {
+              return QueueBuilder.durable(DLQ).build();
+          }
+
+          @Bean
+          public Binding workBinding() {
+              return BindingBuilder.bind(workQueue()).to(workExchange()).with("work.#");
+          }
+
+          @Bean
+          public Binding dlqBinding() {
+              return BindingBuilder.bind(deadLetterQueue()).to(deadLetterExchange()).with("dead");
+          }
+
+          @Bean
+          public Jackson2JsonMessageConverter messageConverter() {
+              return new Jackson2JsonMessageConverter();
+          }
+
+          @Bean
+          public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+                  ConnectionFactory connectionFactory) {
+              SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+              factory.setConnectionFactory(connectionFactory);
+              factory.setMessageConverter(messageConverter());
+              factory.setConcurrentConsumers(2);
+              factory.setMaxConcurrentConsumers(5);
+              factory.setPrefetchCount(10);
+
+              RetryTemplate retryTemplate = new RetryTemplate();
+              ExponentialBackOffPolicy backOff = new ExponentialBackOffPolicy();
+              backOff.setInitialInterval(1000);
+              backOff.setMultiplier(2.0);
+              backOff.setMaxInterval(30000);
+              retryTemplate.setBackOffPolicy(backOff);
+              retryTemplate.setRetryPolicy(new SimpleRetryPolicy(3));
+              factory.setRetryTemplate(retryTemplate);
+              factory.setReplyRecoverer(new RejectAndDontRequeueRecoverer());
+
+              return factory;
+          }
+      }
+
+  - path: src/main/java/com/example/worker/model/WorkItem.java
+    content: |
+      package com.example.worker.model;
+
+      import java.time.Instant;
+      import java.util.Map;
+
+      public record WorkItem(
+          String id,
+          String type,
+          Map<String, Object> payload,
+          int priority,
+          Instant createdAt
+      ) {}
+
+  - path: src/main/java/com/example/worker/listener/WorkListener.java
+    content: |
+      package com.example.worker.listener;
+
+      import com.example.worker.config.RabbitConfig;
+      import com.example.worker.model.WorkItem;
+      import org.slf4j.Logger;
+      import org.slf4j.LoggerFactory;
+      import org.springframework.amqp.rabbit.annotation.RabbitListener;
+      import org.springframework.stereotype.Component;
+
+      @Component
+      public class WorkListener {
+
+          private static final Logger log = LoggerFactory.getLogger(WorkListener.class);
+
+          @RabbitListener(queues = RabbitConfig.WORK_QUEUE)
+          public void handleWork(WorkItem item) {
+              log.info("Processing work item: id={} type={}", item.id(), item.type());
+
+              try {
+                  // Process based on type
+                  switch (item.type()) {
+                      case "email" -> processEmail(item);
+                      case "report" -> generateReport(item);
+                      case "cleanup" -> runCleanup(item);
+                      default -> log.warn("Unknown work type: {}", item.type());
+                  }
+                  log.info("Completed work item: {}", item.id());
+              } catch (Exception e) {
+                  log.error("Failed to process work item {}: {}", item.id(), e.getMessage());
+                  throw e; // Let retry/DLQ handle it
+              }
+          }
+
+          private void processEmail(WorkItem item) {
+              log.info("Sending email for work item {}", item.id());
+          }
+
+          private void generateReport(WorkItem item) {
+              log.info("Generating report for work item {}", item.id());
+          }
+
+          private void runCleanup(WorkItem item) {
+              log.info("Running cleanup for work item {}", item.id());
+          }
+      }
+
+  - path: src/main/resources/application.yml
+    content: |
+      server:
+        port: 8080
+
+      spring:
+        rabbitmq:
+          host: ${RABBITMQ_HOST:localhost}
+          port: ${RABBITMQ_PORT:5672}
+          username: ${RABBITMQ_USER:guest}
+          password: ${RABBITMQ_PASS:guest}
+
+      management:
+        endpoints:
+          web:
+            exposure:
+              include: health,info,metrics
+        endpoint:
+          health:
+            show-details: always
+
+  - path: src/main/resources/application-cloud.yml
+    content: |
+      # RabbitMQ credentials auto-injected via VCAP_SERVICES
+      # No additional configuration needed for CF
+
+  - path: manifest.yml
+    content: |
+      ---
+      applications:
+        - name: amqp-worker
+          memory: 768M
+          disk_quota: 512M
+          instances: 2
+          buildpack: java_buildpack_offline
+          path: target/amqp-worker-0.0.1-SNAPSHOT.jar
+          no-route: true
+          health-check-type: http
+          health-check-http-endpoint: /actuator/health
+          services:
+            - rabbitmq-service
+          env:
+            JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
+            SPRING_PROFILES_ACTIVE: cloud
+
+  - path: .cfignore
+    content: |
+      .git/
+      .idea/
+      *.iml
+      src/
+      pom.xml
+      README.md

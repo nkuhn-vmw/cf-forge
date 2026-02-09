@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# CF Forge Deployment Configuration Template
+# Copy to deploy-config.sh and fill in your environment values.
+# NEVER commit deploy-config.sh — it is .gitignored.
+
+# ============================================================
+# CF Target
+# ============================================================
+CF_API="https://api.sys.example.com"
+CF_ORG="cf-forge"
+CF_SPACE="production"
+CF_SKIP_SSL=false
+CF_APPS_DOMAIN="apps.example.com"
+CF_INTERNAL_DOMAIN="apps.internal"
+
+# ============================================================
+# GenAI on Tanzu Platform
+# ============================================================
+GENAI_SERVICE_TYPE="genai"
+GENAI_PLAN="llama3-8b"
+GENAI_INSTANCE_NAME="cf-forge-genai"
+# OR user-provided GenAI:
+GENAI_USER_PROVIDED=false
+GENAI_BASE_URL=""         # e.g. https://genai-api.example.com/v1
+GENAI_API_KEY=""           # e.g. sk-xxx
+GENAI_MODEL=""             # e.g. llama3-8b
+
+# ============================================================
+# CF SSO (p-identity)
+# ============================================================
+SSO_SERVICE_TYPE="p-identity"
+SSO_PLAN="cf-forge-sso-plan"
+SSO_INSTANCE_NAME="cf-forge-sso"
+# OR UAA-direct:
+SSO_USER_PROVIDED=false
+SSO_AUTH_DOMAIN=""         # e.g. https://uaa.sys.example.com
+SSO_CLIENT_ID=""
+SSO_CLIENT_SECRET=""
+
+# ============================================================
+# PostgreSQL
+# ============================================================
+DB_SERVICE_TYPE="postgresql"
+DB_PLAN="small"
+DB_INSTANCE_NAME="cf-forge-db"
+
+# ============================================================
+# Redis
+# ============================================================
+REDIS_SERVICE_TYPE="p-redis"
+REDIS_PLAN="shared-vm"
+REDIS_INSTANCE_NAME="cf-forge-cache"
+
+# ============================================================
+# RabbitMQ
+# ============================================================
+MQ_SERVICE_TYPE="p-rabbitmq"
+MQ_PLAN="standard"
+MQ_INSTANCE_NAME="cf-forge-mq"
+
+# ============================================================
+# Object Storage (S3-compatible)
+# ============================================================
+OBJECT_STORE_ENDPOINT=""       # e.g. https://minio.example.com
+OBJECT_STORE_ACCESS_KEY=""
+OBJECT_STORE_SECRET_KEY=""
+OBJECT_STORE_BUCKET="cf-forge-artifacts"
+OBJECT_STORE_REGION="us-east-1"
+OBJECT_STORE_INSTANCE_NAME="cf-forge-object-store"
+
+# ============================================================
+# Resource Allocation
+# ============================================================
+API_INSTANCES=3
+API_MEMORY="1G"
+AGENT_INSTANCES=2
+AGENT_MEMORY="2G"
+BUILDER_INSTANCES=2
+BUILDER_MEMORY="2G"
+WORKSPACE_INSTANCES=2
+WORKSPACE_MEMORY="1G"
+ADMIN_INSTANCES=2
+ADMIN_MEMORY="1G"
+UI_INSTANCES=2
+UI_MEMORY="256M"
+
+# ============================================================
+# Security & Admin
+# ============================================================
+CVE_SCAN_ENABLED=true
+CVE_BLOCK_SEVERITY="critical"    # critical, high, medium, low, none
+ADMIN_ENABLED=true
+METRIC_RETENTION_DAYS=90
+HEALTH_CHECK_INTERVAL_SECONDS=60
+SPRING_PROFILES="cloud,production"
+
+# ============================================================
+# Build Artifacts (optional — leave empty to build from source)
+# ============================================================
+API_JAR=""
+AGENT_JAR=""
+BUILDER_JAR=""
+WORKSPACE_JAR=""
+ADMIN_JAR=""
+UI_DIST=""

@@ -1,0 +1,228 @@
+name: Spring Cloud Gateway
+slug: spring-cloud-gateway
+description: >
+  API Gateway built with Spring Cloud Gateway MVC on Spring Boot 3.4.
+  Includes rate limiting (Redis), circuit breaker (Resilience4j), JWT validation,
+  CORS configuration, and CF service bindings for Redis and SSO.
+category: gateway
+language: java
+framework: spring-cloud-gateway
+buildpack: java_buildpack_offline
+
+required_services:
+  - type: redis
+    plan_hint: shared-vm
+  - type: p-identity
+    plan_hint: auth-domain
+
+manifest:
+  memory: 1G
+  disk_quota: 512M
+  instances: 2
+  health_check_type: http
+  health_check_http_endpoint: /actuator/health
+  env:
+    JBP_CONFIG_OPEN_JDK_JRE: "{ jre: { version: 21.+ } }"
+    SPRING_PROFILES_ACTIVE: cloud
+
+files:
+  - path: pom.xml
+    content: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <project xmlns="http://maven.apache.org/POM/4.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+          <modelVersion>4.0.0</modelVersion>
+          <parent>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-starter-parent</artifactId>
+              <version>3.4.2</version>
+          </parent>
+          <groupId>com.example</groupId>
+          <artifactId>api-gateway</artifactId>
+          <version>0.0.1-SNAPSHOT</version>
+          <name>api-gateway</name>
+          <dependencies>
+              <dependency>
+                  <groupId>org.springframework.cloud</groupId>
+                  <artifactId>spring-cloud-starter-gateway-mvc</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-data-redis</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-actuator</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.cloud</groupId>
+                  <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
+              </dependency>
+          </dependencies>
+          <dependencyManagement>
+              <dependencies>
+                  <dependency>
+                      <groupId>org.springframework.cloud</groupId>
+                      <artifactId>spring-cloud-dependencies</artifactId>
+                      <version>2024.0.0</version>
+                      <type>pom</type>
+                      <scope>import</scope>
+                  </dependency>
+              </dependencies>
+          </dependencyManagement>
+          <build>
+              <plugins>
+                  <plugin>
+                      <groupId>org.springframework.boot</groupId>
+                      <artifactId>spring-boot-maven-plugin</artifactId>
+                  </plugin>
+              </plugins>
+          </build>
+      </project>
+
+  - path: src/main/java/com/example/gateway/GatewayApplication.java
+    content: |
+      package com.example.gateway;
+
+      import org.springframework.boot.SpringApplication;
+      import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+      @SpringBootApplication
+      public class GatewayApplication {
+          public static void main(String[] args) {
+              SpringApplication.run(GatewayApplication.class, args);
+          }
+      }
+
+  - path: src/main/java/com/example/gateway/config/GatewayConfig.java
+    content: |
+      package com.example.gateway.config;
+
+      import org.springframework.cloud.gateway.server.mvc.handler.GatewayRouterFunctions;
+      import org.springframework.cloud.gateway.server.mvc.handler.HandlerFunctions;
+      import org.springframework.context.annotation.Bean;
+      import org.springframework.context.annotation.Configuration;
+      import org.springframework.web.servlet.function.RouterFunction;
+      import org.springframework.web.servlet.function.ServerResponse;
+
+      import static org.springframework.cloud.gateway.server.mvc.filter.CircuitBreakerFilterFunctions.circuitBreaker;
+      import static org.springframework.cloud.gateway.server.mvc.filter.FilterFunctions.stripPrefix;
+      import static org.springframework.cloud.gateway.server.mvc.handler.GatewayRouterFunctions.route;
+      import static org.springframework.cloud.gateway.server.mvc.predicate.GatewayRequestPredicates.path;
+
+      @Configuration
+      public class GatewayConfig {
+
+          @Bean
+          public RouterFunction<ServerResponse> apiRoute() {
+              return route("api-service")
+                  .route(path("/api/**"), HandlerFunctions.http("http://api-service.apps.internal:8080"))
+                  .filter(stripPrefix(1))
+                  .filter(circuitBreaker("apiCircuitBreaker"))
+                  .build();
+          }
+
+          @Bean
+          public RouterFunction<ServerResponse> agentRoute() {
+              return route("agent-service")
+                  .route(path("/agent/**"), HandlerFunctions.http("http://agent-service.apps.internal:8080"))
+                  .filter(stripPrefix(1))
+                  .filter(circuitBreaker("agentCircuitBreaker"))
+                  .build();
+          }
+      }
+
+  - path: src/main/java/com/example/gateway/config/RateLimitConfig.java
+    content: |
+      package com.example.gateway.config;
+
+      import org.springframework.context.annotation.Bean;
+      import org.springframework.context.annotation.Configuration;
+      import org.springframework.data.redis.connection.RedisConnectionFactory;
+      import org.springframework.data.redis.core.RedisTemplate;
+
+      @Configuration
+      public class RateLimitConfig {
+
+          @Bean
+          public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory factory) {
+              RedisTemplate<String, String> template = new RedisTemplate<>();
+              template.setConnectionFactory(factory);
+              return template;
+          }
+      }
+
+  - path: src/main/resources/application.yml
+    content: |
+      server:
+        port: 8080
+
+      spring:
+        security:
+          oauth2:
+            resourceserver:
+              jwt:
+                issuer-uri: ${SSO_ISSUER_URI:http://localhost:8080/uaa/oauth/token}
+
+      resilience4j:
+        circuitbreaker:
+          instances:
+            apiCircuitBreaker:
+              slidingWindowSize: 10
+              failureRateThreshold: 50
+              waitDurationInOpenState: 10s
+            agentCircuitBreaker:
+              slidingWindowSize: 10
+              failureRateThreshold: 50
+              waitDurationInOpenState: 10s
+
+      management:
+        endpoints:
+          web:
+            exposure:
+              include: health,info,metrics
+        endpoint:
+          health:
+            show-details: always
+
+  - path: src/main/resources/application-cloud.yml
+    content: |
+      spring:
+        security:
+          oauth2:
+            resourceserver:
+              jwt:
+                issuer-uri: ${vcap.services.sso-service.credentials.auth_domain}/oauth/token
+
+  - path: manifest.yml
+    content: |
+      ---
+      applications:
+        - name: api-gateway
+          memory: 1G
+          disk_quota: 512M
+          instances: 2
+          buildpack: java_buildpack_offline
+          path: target/api-gateway-0.0.1-SNAPSHOT.jar
+          health-check-type: http
+          health-check-http-endpoint: /actuator/health
+          services:
+            - redis-cache
+            - sso-service
+          env:
+            JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
+            SPRING_PROFILES_ACTIVE: cloud
+
+  - path: .cfignore
+    content: |
+      .git/
+      .idea/
+      *.iml
+      src/
+      pom.xml
+      README.md

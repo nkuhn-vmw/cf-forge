@@ -1,0 +1,27 @@
+# Build
+target/
+node_modules/
+dist/
+*.jar
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+scripts/deploy-config.sh
+*.env
+.env.*
+credentials.json
+
+# Logs
+*.log

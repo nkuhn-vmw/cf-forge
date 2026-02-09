@@ -1,0 +1,323 @@
+name: CF Service Broker (OSBAPI)
+slug: cf-service-broker
+description: >
+  Open Service Broker API v2.16 compliant service broker built with Spring Boot 3.4.
+  Implements catalog, provisioning, deprovisioning, binding, and unbinding endpoints.
+  Ready to register with Cloud Foundry via 'cf create-service-broker'.
+category: platform
+language: java
+framework: spring-boot
+buildpack: java_buildpack_offline
+
+required_services:
+  - type: postgresql
+    plan_hint: small
+
+manifest:
+  memory: 768M
+  disk_quota: 512M
+  instances: 1
+  health_check_type: http
+  health_check_http_endpoint: /actuator/health
+  env:
+    JBP_CONFIG_OPEN_JDK_JRE: "{ jre: { version: 21.+ } }"
+    SPRING_PROFILES_ACTIVE: cloud
+
+files:
+  - path: pom.xml
+    content: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <project xmlns="http://maven.apache.org/POM/4.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+          <modelVersion>4.0.0</modelVersion>
+          <parent>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-starter-parent</artifactId>
+              <version>3.4.2</version>
+          </parent>
+          <groupId>com.example</groupId>
+          <artifactId>custom-service-broker</artifactId>
+          <version>0.0.1-SNAPSHOT</version>
+          <name>custom-service-broker</name>
+          <dependencies>
+              <dependency>
+                  <groupId>org.springframework.cloud</groupId>
+                  <artifactId>spring-cloud-starter-open-service-broker</artifactId>
+                  <version>4.3.0</version>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-data-jpa</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-security</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-actuator</artifactId>
+              </dependency>
+              <dependency>
+                  <groupId>org.postgresql</groupId>
+                  <artifactId>postgresql</artifactId>
+                  <scope>runtime</scope>
+              </dependency>
+          </dependencies>
+          <build>
+              <plugins>
+                  <plugin>
+                      <groupId>org.springframework.boot</groupId>
+                      <artifactId>spring-boot-maven-plugin</artifactId>
+                  </plugin>
+              </plugins>
+          </build>
+      </project>
+
+  - path: src/main/java/com/example/broker/BrokerApplication.java
+    content: |
+      package com.example.broker;
+
+      import org.springframework.boot.SpringApplication;
+      import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+      @SpringBootApplication
+      public class BrokerApplication {
+          public static void main(String[] args) {
+              SpringApplication.run(BrokerApplication.class, args);
+          }
+      }
+
+  - path: src/main/java/com/example/broker/service/CustomServiceInstanceService.java
+    content: |
+      package com.example.broker.service;
+
+      import org.springframework.cloud.servicebroker.model.catalog.Catalog;
+      import org.springframework.cloud.servicebroker.model.catalog.Plan;
+      import org.springframework.cloud.servicebroker.model.catalog.ServiceDefinition;
+      import org.springframework.cloud.servicebroker.model.instance.*;
+      import org.springframework.cloud.servicebroker.service.ServiceInstanceService;
+      import org.springframework.stereotype.Service;
+      import reactor.core.publisher.Mono;
+
+      import java.util.Map;
+      import java.util.concurrent.ConcurrentHashMap;
+
+      @Service
+      public class CustomServiceInstanceService implements ServiceInstanceService {
+
+          private final Map<String, CreateServiceInstanceRequest> instances = new ConcurrentHashMap<>();
+
+          @Override
+          public Mono<CreateServiceInstanceResponse> createServiceInstance(CreateServiceInstanceRequest request) {
+              instances.put(request.getServiceInstanceId(), request);
+              return Mono.just(CreateServiceInstanceResponse.builder()
+                  .dashboardUrl("https://dashboard.example.com/" + request.getServiceInstanceId())
+                  .async(false)
+                  .build());
+          }
+
+          @Override
+          public Mono<DeleteServiceInstanceResponse> deleteServiceInstance(DeleteServiceInstanceRequest request) {
+              instances.remove(request.getServiceInstanceId());
+              return Mono.just(DeleteServiceInstanceResponse.builder()
+                  .async(false)
+                  .build());
+          }
+
+          @Override
+          public Mono<GetServiceInstanceResponse> getServiceInstance(GetServiceInstanceRequest request) {
+              var stored = instances.get(request.getServiceInstanceId());
+              if (stored == null) {
+                  return Mono.empty();
+              }
+              return Mono.just(GetServiceInstanceResponse.builder()
+                  .serviceDefinitionId(stored.getServiceDefinitionId())
+                  .planId(stored.getPlanId())
+                  .build());
+          }
+      }
+
+  - path: src/main/java/com/example/broker/service/CustomServiceInstanceBindingService.java
+    content: |
+      package com.example.broker.service;
+
+      import org.springframework.cloud.servicebroker.model.binding.*;
+      import org.springframework.cloud.servicebroker.service.ServiceInstanceBindingService;
+      import org.springframework.stereotype.Service;
+      import reactor.core.publisher.Mono;
+
+      import java.util.Map;
+      import java.util.UUID;
+
+      @Service
+      public class CustomServiceInstanceBindingService implements ServiceInstanceBindingService {
+
+          @Override
+          public Mono<CreateServiceInstanceAppBindingResponse> createServiceInstanceBinding(
+                  CreateServiceInstanceBindingRequest request) {
+              return Mono.just(CreateServiceInstanceAppBindingResponse.builder()
+                  .credentials(Map.of(
+                      "uri", "https://custom-service.example.com",
+                      "username", "binding-" + request.getBindingId(),
+                      "password", UUID.randomUUID().toString()
+                  ))
+                  .build());
+          }
+
+          @Override
+          public Mono<DeleteServiceInstanceBindingResponse> deleteServiceInstanceBinding(
+                  DeleteServiceInstanceBindingRequest request) {
+              return Mono.just(DeleteServiceInstanceBindingResponse.builder()
+                  .async(false)
+                  .build());
+          }
+      }
+
+  - path: src/main/java/com/example/broker/config/CatalogConfig.java
+    content: |
+      package com.example.broker.config;
+
+      import org.springframework.cloud.servicebroker.model.catalog.*;
+      import org.springframework.context.annotation.Bean;
+      import org.springframework.context.annotation.Configuration;
+
+      @Configuration
+      public class CatalogConfig {
+
+          @Bean
+          public Catalog catalog() {
+              Plan freePlan = Plan.builder()
+                  .id("free-plan-id")
+                  .name("free")
+                  .description("Free tier with limited resources")
+                  .free(true)
+                  .build();
+
+              Plan standardPlan = Plan.builder()
+                  .id("standard-plan-id")
+                  .name("standard")
+                  .description("Standard plan with full resources")
+                  .free(false)
+                  .build();
+
+              ServiceDefinition service = ServiceDefinition.builder()
+                  .id("custom-service-id")
+                  .name("custom-service")
+                  .description("A custom service broker for Cloud Foundry")
+                  .bindable(true)
+                  .tags("custom", "example")
+                  .plans(freePlan, standardPlan)
+                  .build();
+
+              return Catalog.builder()
+                  .serviceDefinitions(service)
+                  .build();
+          }
+      }
+
+  - path: src/main/java/com/example/broker/config/SecurityConfig.java
+    content: |
+      package com.example.broker.config;
+
+      import org.springframework.beans.factory.annotation.Value;
+      import org.springframework.context.annotation.Bean;
+      import org.springframework.context.annotation.Configuration;
+      import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+      import org.springframework.security.core.userdetails.User;
+      import org.springframework.security.core.userdetails.UserDetailsService;
+      import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+      import org.springframework.security.web.SecurityFilterChain;
+
+      import static org.springframework.security.config.Customizer.withDefaults;
+
+      @Configuration
+      public class SecurityConfig {
+
+          @Value("${broker.username:admin}")
+          private String username;
+
+          @Value("${broker.password:changeme}")
+          private String password;
+
+          @Bean
+          public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+              return http
+                  .csrf(csrf -> csrf.disable())
+                  .authorizeHttpRequests(auth -> auth
+                      .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                      .requestMatchers("/v2/**").authenticated()
+                      .anyRequest().denyAll()
+                  )
+                  .httpBasic(withDefaults())
+                  .build();
+          }
+
+          @Bean
+          public UserDetailsService userDetailsService() {
+              return new InMemoryUserDetailsManager(
+                  User.withDefaultPasswordEncoder()
+                      .username(username)
+                      .password(password)
+                      .roles("BROKER")
+                      .build()
+              );
+          }
+      }
+
+  - path: src/main/resources/application.yml
+    content: |
+      server:
+        port: 8080
+
+      broker:
+        username: ${BROKER_USERNAME:admin}
+        password: ${BROKER_PASSWORD:changeme}
+
+      spring:
+        datasource:
+          url: jdbc:postgresql://localhost:5432/broker
+          username: postgres
+          password: postgres
+        jpa:
+          hibernate:
+            ddl-auto: update
+
+      management:
+        endpoints:
+          web:
+            exposure:
+              include: health,info
+
+  - path: manifest.yml
+    content: |
+      ---
+      applications:
+        - name: custom-service-broker
+          memory: 768M
+          disk_quota: 512M
+          instances: 1
+          buildpack: java_buildpack_offline
+          path: target/custom-service-broker-0.0.1-SNAPSHOT.jar
+          health-check-type: http
+          health-check-http-endpoint: /actuator/health
+          services:
+            - broker-db
+          env:
+            JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
+            SPRING_PROFILES_ACTIVE: cloud
+            BROKER_USERNAME: ((broker-username))
+            BROKER_PASSWORD: ((broker-password))
+
+      # After deploying, register the broker:
+      # cf create-service-broker custom-service-broker admin changeme https://custom-service-broker.<domain>
+      # cf enable-service-access custom-service
+
+  - path: .cfignore
+    content: |
+      .git/
+      .idea/
+      *.iml
+      src/
+      pom.xml
+      README.md

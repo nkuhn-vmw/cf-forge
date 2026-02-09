@@ -21,3 +21,25 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; d
 .status-DOWN { background: #991b1b; color: #fca5a5; }
 .status-DEGRADED { background: #92400e; color: #fcd34d; }
 .status-UNKNOWN { background: #374151; color: #9ca3af; }
+
+/* Audit Log */
+.audit-filters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.filter-input { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 14px; }
+.filter-input::placeholder { color: #64748b; }
+.btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.btn-primary { background: #2563eb; color: white; }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-secondary { background: #334155; color: #e2e8f0; }
+.btn-secondary:hover { background: #475569; }
+.btn-sm { padding: 4px 10px; font-size: 13px; }
+.export-group { display: flex; gap: 6px; margin-left: auto; }
+.audit-summary { color: #94a3b8; margin-bottom: 12px; font-size: 14px; }
+.audit-table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; }
+.audit-table th { background: #0f172a; color: #94a3b8; padding: 12px 14px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.audit-table td { padding: 10px 14px; border-top: 1px solid #1e293b; font-size: 14px; }
+.audit-table tr:hover { background: #334155; }
+.ts { white-space: nowrap; color: #94a3b8; }
+.mono { font-family: monospace; font-size: 13px; color: #7dd3fc; }
+.action-badge { background: #1e3a5f; color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.details { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #64748b; font-size: 13px; }
+.pagination { margin-top: 16px; display: flex; gap: 8px; align-items: center; color: #94a3b8; }

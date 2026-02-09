@@ -3,6 +3,9 @@ package com.cfforge.agent.config;
 import com.cfforge.agent.advisor.CfContextAdvisor;
 import com.cfforge.agent.advisor.CodeSafetyAdvisor;
 import com.cfforge.agent.advisor.OperatorInstructionsAdvisor;
+import com.cfforge.agent.advisor.PromptInjectionAdvisor;
+import com.cfforge.agent.advisor.RecursiveRefinementAdvisor;
+import com.cfforge.agent.advisor.ToolArgumentAugmenter;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
@@ -27,14 +30,19 @@ public class AgentConfig {
             CfContextAdvisor cfContextAdvisor,
             CodeSafetyAdvisor codeSafetyAdvisor,
             OperatorInstructionsAdvisor operatorInstructionsAdvisor,
+            PromptInjectionAdvisor promptInjectionAdvisor,
+            ToolArgumentAugmenter toolArgumentAugmenter,
+            RecursiveRefinementAdvisor recursiveRefinementAdvisor,
             QuestionAnswerAdvisor cfDocsRagAdvisor,
             List<Object> agentTools) {
 
         return builder
             .defaultSystem(ResourceUtils.getText("classpath:prompts/system.st"))
             .defaultAdvisors(
+                promptInjectionAdvisor,
                 operatorInstructionsAdvisor,
                 cfContextAdvisor,
+                toolArgumentAugmenter,
                 MessageChatMemoryAdvisor.builder(
                     MessageWindowChatMemory.builder()
                         .chatMemoryRepository(chatMemoryRepository)
@@ -43,7 +51,8 @@ public class AgentConfig {
                 ).build(),
                 cfDocsRagAdvisor,
                 new ToolCallAdvisor(),
-                codeSafetyAdvisor
+                codeSafetyAdvisor,
+                recursiveRefinementAdvisor
             )
             .defaultTools(agentTools.toArray())
             .build();

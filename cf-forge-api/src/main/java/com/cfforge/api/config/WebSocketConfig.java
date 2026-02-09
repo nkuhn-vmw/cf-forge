@@ -18,15 +18,26 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws/terminal/{sessionId}")
+        // Collaboration endpoint with SockJS fallback
+        registry.addEndpoint("/ws/collab")
+            .setAllowedOriginPatterns("*")
+            .withSockJS();
+
+        // Shared terminal sessions
+        registry.addEndpoint("/ws/terminal")
+            .setAllowedOriginPatterns("*")
+            .withSockJS();
+
+        // Build/deploy log streaming
+        registry.addEndpoint("/ws/logs")
             .setAllowedOriginPatterns("*");
-        registry.addEndpoint("/ws/collab/{projectId}")
+
+        // Agent conversation streaming
+        registry.addEndpoint("/ws/agent")
             .setAllowedOriginPatterns("*");
-        registry.addEndpoint("/ws/logs/{appGuid}")
-            .setAllowedOriginPatterns("*");
-        registry.addEndpoint("/ws/agent/{conversationId}")
-            .setAllowedOriginPatterns("*");
-        registry.addEndpoint("/ws/build/{buildId}")
+
+        // Build progress streaming
+        registry.addEndpoint("/ws/build")
             .setAllowedOriginPatterns("*");
     }
 }

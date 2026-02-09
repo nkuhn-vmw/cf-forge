@@ -3,6 +3,9 @@ package com.cfforge.builder.consumer;
 import com.cfforge.builder.model.BuildContext;
 import com.cfforge.builder.model.BuildResult;
 import com.cfforge.builder.pipeline.BuildPipeline;
+import com.cfforge.builder.security.CveScanResult;
+import com.cfforge.builder.security.CveScanner;
+import com.cfforge.builder.security.SbomGenerator;
 import com.cfforge.common.dto.BuildRequest;
 import com.cfforge.common.entity.Build;
 import com.cfforge.common.enums.BuildStatus;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -31,18 +35,24 @@ public class BuildPipelineConsumer {
     private final ProjectRepository projectRepository;
     private final S3StorageService storageService;
     private final MetricEventPublisher metricPublisher;
+    private final CveScanner cveScanner;
+    private final SbomGenerator sbomGenerator;
     private final Map<Language, BuildPipeline> pipelineMap;
 
     public BuildPipelineConsumer(List<BuildPipeline> pipelines,
                                   BuildRepository buildRepository,
                                   ProjectRepository projectRepository,
                                   S3StorageService storageService,
-                                  MetricEventPublisher metricPublisher) {
+                                  MetricEventPublisher metricPublisher,
+                                  CveScanner cveScanner,
+                                  SbomGenerator sbomGenerator) {
         this.pipelines = pipelines;
         this.buildRepository = buildRepository;
         this.projectRepository = projectRepository;
         this.storageService = storageService;
         this.metricPublisher = metricPublisher;
+        this.cveScanner = cveScanner;
+        this.sbomGenerator = sbomGenerator;
         this.pipelineMap = pipelines.stream()
             .collect(Collectors.toMap(BuildPipeline::supportedLanguage, p -> p));
     }
@@ -75,8 +85,38 @@ public class BuildPipelineConsumer {
                     throw new RuntimeException("No build pipeline for language: " + project.getLanguage());
                 }
 
+                // Execute build
                 BuildResult result = pipeline.execute(context);
                 long duration = System.currentTimeMillis() - startTime;
+
+                if (result.getStatus() == BuildStatus.SUCCESS) {
+                    // Run CVE scan
+                    CveScanResult cveScan = cveScanner.scan(workDir);
+                    if (cveScan.isScanned()) {
+                        Map<String, Object> cveReport = new LinkedHashMap<>();
+                        cveReport.put("scanned", true);
+                        cveReport.put("summary", cveScan.getSummary());
+                        cveReport.put("blocked", cveScan.isBlocked());
+                        cveReport.put("severityCounts", cveScan.getSeverityCounts());
+                        cveReport.put("vulnerabilityCount", cveScan.getVulnerabilities().size());
+                        build.setCveReport(cveReport);
+
+                        if (cveScan.isBlocked()) {
+                            build.setStatus(BuildStatus.BLOCKED);
+                            build.setBuildLog(result.getLog() + "\n\nCVE SCAN: " + cveScan.getSummary()
+                                + "\nBuild blocked due to CVE severity gate.");
+                            build.setDurationMs((int) duration);
+                            buildRepository.save(build);
+                            metricPublisher.publishFailure("build.blocked", null, request.projectId(), cveScan.getSummary());
+                            return;
+                        }
+                    }
+
+                    // Generate SBOM
+                    String sbomPath = sbomGenerator.generate(workDir, project.getLanguage(),
+                        request.projectId(), build.getId());
+                    build.setSbomPath(sbomPath);
+                }
 
                 build.setStatus(result.getStatus());
                 build.setBuildLog(result.getLog());

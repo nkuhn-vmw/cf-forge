@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout}">
+<head><title>Audit Log - CF Forge Admin</title></head>
+<body>
+<div layout:fragment="content">
+    <h1>Audit Log</h1>
+
+    <!-- Filters -->
+    <div class="audit-filters">
+        <input type="text" id="filterAction" placeholder="Filter by action..." class="filter-input">
+        <input type="text" id="filterUser" placeholder="User ID..." class="filter-input">
+        <input type="text" id="filterProject" placeholder="Project ID..." class="filter-input">
+        <button onclick="loadAuditLogs()" class="btn btn-primary">Search</button>
+        <div class="export-group">
+            <button onclick="exportLogs('json')" class="btn btn-secondary">Export JSON</button>
+            <button onclick="exportLogs('csv')" class="btn btn-secondary">Export CSV</button>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div id="auditCount" class="audit-summary"></div>
+
+    <table class="audit-table" id="auditTable">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Action</th>
+                <th>User</th>
+                <th>Project</th>
+                <th>IP Address</th>
+                <th>Details</th>
+            </tr>
+        </thead>
+        <tbody id="auditBody"></tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination"></div>
+
+    <script>
+        let currentPage = 0;
+        const pageSize = 50;
+
+        function loadAuditLogs(page) {
+            currentPage = page || 0;
+            const action = document.getElementById('filterAction').value;
+            const userId = document.getElementById('filterUser').value;
+            const projectId = document.getElementById('filterProject').value;
+
+            let url = `/api/v1/admin/audit?page=${currentPage}&size=${pageSize}`;
+            if (action) url += `&action=${encodeURIComponent(action)}`;
+            if (userId) url += `&userId=${encodeURIComponent(userId)}`;
+            if (projectId) url += `&projectId=${encodeURIComponent(projectId)}`;
+
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    renderTable(data.content);
+                    renderPagination(data);
+                    document.getElementById('auditCount').textContent =
+                        `Showing ${data.content.length} of ${data.totalElements} entries`;
+                });
+        }
+
+        function renderTable(entries) {
+            const tbody = document.getElementById('auditBody');
+            tbody.innerHTML = entries.map(e => `
+                <tr>
+                    <td class="ts">${new Date(e.timestamp).toLocaleString()}</td>
+                    <td><span class="action-badge">${e.action}</span></td>
+                    <td class="mono">${e.userId ? e.userId.substring(0, 8) + '...' : '-'}</td>
+                    <td class="mono">${e.projectId ? e.projectId.substring(0, 8) + '...' : '-'}</td>
+                    <td>${e.ipAddress || '-'}</td>
+                    <td class="details">${e.details ? JSON.stringify(e.details).substring(0, 80) : '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPagination(data) {
+            const div = document.getElementById('pagination');
+            let html = '';
+            if (data.page > 0) html += `<button onclick="loadAuditLogs(${data.page - 1})" class="btn btn-sm">Prev</button> `;
+            html += `Page ${data.page + 1} of ${data.totalPages} `;
+            if (data.page < data.totalPages - 1) html += `<button onclick="loadAuditLogs(${data.page + 1})" class="btn btn-sm">Next</button>`;
+            div.innerHTML = html;
+        }
+
+        function exportLogs(format) {
+            const action = document.getElementById('filterAction').value;
+            let url = `/api/v1/admin/audit/export/${format}?days=30`;
+            if (action) url += `&action=${encodeURIComponent(action)}`;
+            window.location.href = url;
+        }
+
+        // Load on page ready
+        loadAuditLogs();
+    </script>
+</div>
+</body>
+</html>
