@@ -20,6 +20,8 @@ public class OidcDiscoveryService {
     private String authorizationEndpoint;
     private String tokenEndpoint;
     private String endSessionEndpoint;
+    private String jwksUri;
+    private String issuer;
 
     public OidcDiscoveryService(SsoProperties ssoProperties) {
         this.ssoProperties = ssoProperties;
@@ -46,7 +48,10 @@ public class OidcDiscoveryService {
                 this.authorizationEndpoint = (String) config.get("authorization_endpoint");
                 this.tokenEndpoint = (String) config.get("token_endpoint");
                 this.endSessionEndpoint = (String) config.get("end_session_endpoint");
-                log.info("OIDC discovery complete: auth={}, token={}", authorizationEndpoint, tokenEndpoint);
+                this.jwksUri = (String) config.get("jwks_uri");
+                this.issuer = (String) config.get("issuer");
+                log.info("OIDC discovery complete: auth={}, token={}, jwks={}, issuer={}",
+                    authorizationEndpoint, tokenEndpoint, jwksUri, issuer);
             }
         } catch (Exception e) {
             log.warn("OIDC discovery failed from {}. Falling back to convention-based endpoints.", discoveryUrl, e);
@@ -66,5 +71,13 @@ public class OidcDiscoveryService {
 
     public String getEndSessionEndpoint() {
         return endSessionEndpoint;
+    }
+
+    public String getJwksUri() {
+        return jwksUri;
+    }
+
+    public String getIssuer() {
+        return issuer;
     }
 }

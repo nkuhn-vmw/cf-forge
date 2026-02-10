@@ -1,5 +1,6 @@
 package com.cfforge.api.config;
 
+import com.cfforge.api.service.OidcDiscoveryService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +9,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
@@ -22,11 +26,14 @@ import java.util.List;
 public class SecurityConfig {
 
     private final CookieBearerTokenResolver cookieBearerTokenResolver;
+    private final OidcDiscoveryService oidcDiscovery;
     private final String domain;
 
     public SecurityConfig(CookieBearerTokenResolver cookieBearerTokenResolver,
+                          OidcDiscoveryService oidcDiscovery,
                           @Value("${cf.forge.domain}") String domain) {
         this.cookieBearerTokenResolver = cookieBearerTokenResolver;
+        this.oidcDiscovery = oidcDiscovery;
         this.domain = domain;
     }
 
@@ -69,6 +76,25 @@ public class SecurityConfig {
             return authorities;
         });
         return converter;
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        String jwksUri = oidcDiscovery.getJwksUri();
+        if (jwksUri != null) {
+            NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwksUri).build();
+            // Validate against the issuer from OIDC discovery (handles UAA issuer-uri format)
+            String discoveredIssuer = oidcDiscovery.getIssuer();
+            if (discoveredIssuer != null) {
+                OAuth2TokenValidator<Jwt> validators = new DelegatingOAuth2TokenValidator<>(
+                    JwtValidators.createDefaultWithIssuer(discoveredIssuer)
+                );
+                decoder.setJwtValidator(validators);
+            }
+            return decoder;
+        }
+        // Fallback: let Spring auto-discover from issuer-uri
+        return JwtDecoders.fromIssuerLocation(oidcDiscovery.getIssuer());
     }
 
     @Bean

@@ -214,7 +214,14 @@ public class AuthController {
     private void setTokenCookies(HttpServletResponse response, Map<String, Object> tokenResponse) {
         String accessToken = (String) tokenResponse.get("access_token");
         Object expiresInObj = tokenResponse.get("expires_in");
-        long expiresIn = expiresInObj instanceof Number n ? n.longValue() : 3600;
+        long expiresIn;
+        if (expiresInObj instanceof Number n) {
+            expiresIn = n.longValue();
+        } else if (expiresInObj instanceof String s) {
+            try { expiresIn = Long.parseLong(s); } catch (NumberFormatException e) { expiresIn = 3600; }
+        } else {
+            expiresIn = 3600;
+        }
 
         ResponseCookie accessCookie = ResponseCookie.from(ACCESS_COOKIE, accessToken)
             .httpOnly(true)

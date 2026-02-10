@@ -174,6 +174,7 @@ deploy_app() {
     cf set-env "${name}" SPRING_PROFILES_ACTIVE "${SPRING_PROFILES}" 2>/dev/null || true
     cf set-env "${name}" CVE_SCAN_ENABLED "${CVE_SCAN_ENABLED}" 2>/dev/null || true
     cf set-env "${name}" CVE_BLOCK_SEVERITY "${CVE_BLOCK_SEVERITY}" 2>/dev/null || true
+    cf set-env "${name}" CF_FORGE_DOMAIN "https://forge.${CF_APPS_DOMAIN}" 2>/dev/null || true
 
     cf restage "${name}" 2>/dev/null || true
     log_ok "Deployed ${name}"

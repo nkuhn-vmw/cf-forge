@@ -14,3 +14,15 @@ spring:
     username: ${vcap.services.cf-forge-mq.credentials.username:}
     password: ${vcap.services.cf-forge-mq.credentials.password:}
     virtual-host: ${vcap.services.cf-forge-mq.credentials.vhost:/}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${vcap.services.cf-forge-sso.credentials.auth_domain:${SSO_ISSUER_URI:}}
+
+cf:
+  forge:
+    sso:
+      client-id: ${vcap.services.cf-forge-sso.credentials.client_id:${SSO_CLIENT_ID:}}
+      client-secret: ${vcap.services.cf-forge-sso.credentials.client_secret:${SSO_CLIENT_SECRET:}}
+      issuer-uri: ${vcap.services.cf-forge-sso.credentials.auth_domain:${SSO_ISSUER_URI:}}

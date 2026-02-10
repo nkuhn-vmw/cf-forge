@@ -14,15 +14,20 @@ async function attemptRefresh(): Promise<boolean> {
   }
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+function buildFetchOptions(options?: RequestInit): RequestInit {
+  const { headers: optHeaders, ...rest } = options ?? {}
+  return {
+    ...rest,
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...(optHeaders as Record<string, string>),
     },
     credentials: 'include',
-    ...options,
-  })
+  }
+}
+
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, buildFetchOptions(options))
 
   if (res.status === 401) {
     // Deduplicate concurrent refresh attempts
@@ -32,14 +37,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     const refreshed = await refreshPromise
     if (refreshed) {
       // Retry the original request
-      const retryRes = await fetch(`${BASE_URL}${path}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers,
-        },
-        credentials: 'include',
-        ...options,
-      })
+      const retryRes = await fetch(`${BASE_URL}${path}`, buildFetchOptions(options))
       if (retryRes.ok) {
         if (retryRes.status === 204) return undefined as T
         return retryRes.json()
@@ -209,7 +207,7 @@ export const api = {
   agent: {
     generate: (projectId: string, prompt: string): EventSource => {
       const params = new URLSearchParams({ projectId, prompt })
-      return new EventSource(`${BASE_URL}/agent/generate?${params}`)
+      return new EventSource(`${BASE_URL}/agent/generate?${params}`, { withCredentials: true })
     },
   },
 
