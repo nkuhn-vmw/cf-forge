@@ -19,7 +19,7 @@ public class HealthCheckScheduler {
     private final WebClient.Builder webClientBuilder;
 
     private static final Map<String, String> COMPONENTS = Map.of(
-        "cf-forge-api", "http://cf-forge-api.apps.internal:8080/actuator/health",
+        "cf-forge-api", "https://cf-forge-api.apps.tas-ndc.kuhn-labs.com/actuator/health",
         "cf-forge-agent", "http://cf-forge-agent.apps.internal:8080/actuator/health",
         "cf-forge-builder", "http://cf-forge-builder.apps.internal:8080/actuator/health",
         "cf-forge-workspace", "http://cf-forge-workspace.apps.internal:8080/actuator/health"
