@@ -4,6 +4,7 @@ import com.cfforge.common.dto.DeployRequest;
 import com.cfforge.common.entity.Deployment;
 import com.cfforge.common.enums.DeployEnvironment;
 import com.cfforge.common.enums.DeployStatus;
+import com.cfforge.common.enums.DeployStrategy;
 import com.cfforge.common.repository.DeploymentRepository;
 import com.cfforge.common.repository.ProjectRepository;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -38,9 +40,11 @@ public class DeploymentController {
             .orElseThrow(() -> new RuntimeException("Project not found"));
 
         String env = body != null ? body.getOrDefault("environment", "STAGING") : "STAGING";
+        String strategy = body != null ? body.getOrDefault("strategy", "ROLLING") : "ROLLING";
         var deployment = Deployment.builder()
             .project(project)
             .environment(DeployEnvironment.valueOf(env))
+            .strategy(DeployStrategy.valueOf(strategy))
             .status(DeployStatus.PENDING)
             .build();
         deployment = deploymentRepository.save(deployment);
@@ -59,6 +63,26 @@ public class DeploymentController {
                                                      @PathVariable UUID deployId) {
         return deploymentRepository.findById(deployId)
             .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{deployId}/rollback")
+    public ResponseEntity<Deployment> rollback(@PathVariable UUID projectId,
+                                                @PathVariable UUID deployId) {
+        return deploymentRepository.findById(deployId)
+            .map(original -> {
+                var rollback = Deployment.builder()
+                    .project(original.getProject())
+                    .environment(original.getEnvironment())
+                    .strategy(DeployStrategy.ROLLING)
+                    .status(DeployStatus.PENDING)
+                    .build();
+                rollback = deploymentRepository.save(rollback);
+                original.setStatus(DeployStatus.ROLLED_BACK);
+                original.setUpdatedAt(Instant.now());
+                deploymentRepository.save(original);
+                return ResponseEntity.status(HttpStatus.CREATED).body(rollback);
+            })
             .orElse(ResponseEntity.notFound().build());
     }
 }

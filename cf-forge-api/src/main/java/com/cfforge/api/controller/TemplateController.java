@@ -1,9 +1,15 @@
 package com.cfforge.api.controller;
 
 import com.cfforge.api.service.TemplateService;
+import com.cfforge.common.entity.Project;
 import com.cfforge.common.entity.Template;
+import com.cfforge.common.entity.User;
+import com.cfforge.common.repository.ProjectRepository;
+import com.cfforge.common.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,9 +20,15 @@ import java.util.Map;
 public class TemplateController {
 
     private final TemplateService templateService;
+    private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
 
-    public TemplateController(TemplateService templateService) {
+    public TemplateController(TemplateService templateService,
+                               ProjectRepository projectRepository,
+                               UserRepository userRepository) {
         this.templateService = templateService;
+        this.projectRepository = projectRepository;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -35,8 +47,36 @@ public class TemplateController {
     }
 
     @PostMapping("/{slug}/use")
-    public Template useTemplate(@PathVariable String slug) {
-        return templateService.useTemplate(slug);
+    public Project useTemplate(@PathVariable String slug,
+                                @AuthenticationPrincipal Jwt jwt) {
+        Template template = templateService.useTemplate(slug);
+        User user = getOrCreateUser(jwt);
+
+        String projectName = template.getName() + " Project";
+        String projectSlug = projectName.toLowerCase().replaceAll("[^a-z0-9]+", "-");
+
+        var project = Project.builder()
+            .owner(user)
+            .name(projectName)
+            .slug(projectSlug)
+            .description("Created from template: " + template.getName())
+            .language(template.getLanguage())
+            .framework(template.getFramework())
+            .buildpack(template.getBuildpack())
+            .cfManifest(template.getManifestTemplate())
+            .build();
+
+        return projectRepository.save(project);
+    }
+
+    private User getOrCreateUser(Jwt jwt) {
+        String uaaUserId = jwt.getSubject();
+        return userRepository.findByUaaUserId(uaaUserId)
+            .orElseGet(() -> userRepository.save(User.builder()
+                .uaaUserId(uaaUserId)
+                .email(jwt.getClaimAsString("email"))
+                .displayName(jwt.getClaimAsString("user_name"))
+                .build()));
     }
 
     // --- Community marketplace endpoints ---

@@ -60,6 +60,24 @@ public class ProjectController {
         return ResponseEntity.status(HttpStatus.CREATED).body(projectRepository.save(project));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Project> updateProject(@PathVariable UUID id,
+                                                   @RequestBody Map<String, String> body) {
+        return projectRepository.findById(id)
+            .map(project -> {
+                if (body.containsKey("name")) project.setName(body.get("name"));
+                if (body.containsKey("description")) project.setDescription(body.get("description"));
+                if (body.containsKey("framework")) project.setFramework(body.get("framework"));
+                if (body.containsKey("buildpack")) project.setBuildpack(body.get("buildpack"));
+                if (body.containsKey("language")) {
+                    project.setLanguage(Language.valueOf(body.get("language")));
+                }
+                project.setUpdatedAt(Instant.now());
+                return ResponseEntity.ok(projectRepository.save(project));
+            })
+            .orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(@PathVariable UUID id) {
         projectRepository.deleteById(id);

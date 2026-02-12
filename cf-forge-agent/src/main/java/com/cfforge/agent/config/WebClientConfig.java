@@ -10,10 +10,14 @@ public class WebClientConfig {
 
     @Bean
     public WebClient cfApiClient(
-            @Value("${cfforge.cf-api.url:https://api.sys.local}") String cfApiUrl) {
-        return WebClient.builder()
-            .baseUrl(cfApiUrl)
-            .build();
+            @Value("${cfforge.cf-api.url:https://api.sys.local}") String cfApiUrl,
+            @Value("${cfforge.cf-api.token:}") String cfApiToken) {
+        var builder = WebClient.builder()
+            .baseUrl(cfApiUrl + "/v3");
+        if (cfApiToken != null && !cfApiToken.isBlank()) {
+            builder.defaultHeader("Authorization", "Bearer " + cfApiToken);
+        }
+        return builder.build();
     }
 
     @Bean
