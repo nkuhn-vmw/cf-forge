@@ -10,10 +10,16 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -34,7 +40,31 @@ public class S3StorageService {
     @Value("${s3.bucket:cf-forge-artifacts}")
     private String defaultBucket;
 
+    @Value("${s3.fallback-dir:#{null}}")
+    private String fallbackDir;
+
     private volatile S3Client s3Client;
+    private volatile Boolean useFilesystem;
+
+    private boolean isFilesystemMode() {
+        if (useFilesystem == null) {
+            synchronized (this) {
+                if (useFilesystem == null) {
+                    useFilesystem = (endpoint == null || endpoint.isBlank());
+                    if (useFilesystem) {
+                        String dir = (fallbackDir != null && !fallbackDir.isBlank()) ? fallbackDir : "/tmp/cf-forge-storage";
+                        log.info("S3 not configured, using filesystem fallback at: {}", dir);
+                    }
+                }
+            }
+        }
+        return useFilesystem;
+    }
+
+    private Path getFallbackPath(String bucket, String key) {
+        String dir = (fallbackDir != null && !fallbackDir.isBlank()) ? fallbackDir : "/tmp/cf-forge-storage";
+        return Paths.get(dir, bucket, key);
+    }
 
     private S3Client getClient() {
         if (s3Client == null) {
@@ -62,6 +92,16 @@ public class S3StorageService {
     }
 
     public void putObject(String bucket, String key, byte[] content) {
+        if (isFilesystemMode()) {
+            try {
+                Path path = getFallbackPath(bucket, key);
+                Files.createDirectories(path.getParent());
+                Files.write(path, content);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to write file: " + key, e);
+            }
+            return;
+        }
         getClient().putObject(
             PutObjectRequest.builder().bucket(bucket).key(key).build(),
             RequestBody.fromBytes(content)
@@ -69,6 +109,16 @@ public class S3StorageService {
     }
 
     public void putObject(String key, InputStream inputStream, long contentLength) {
+        if (isFilesystemMode()) {
+            try {
+                Path path = getFallbackPath(defaultBucket, key);
+                Files.createDirectories(path.getParent());
+                Files.copy(inputStream, path);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to write file: " + key, e);
+            }
+            return;
+        }
         getClient().putObject(
             PutObjectRequest.builder().bucket(defaultBucket).key(key).build(),
             RequestBody.fromInputStream(inputStream, contentLength)
@@ -80,6 +130,17 @@ public class S3StorageService {
     }
 
     public byte[] getObject(String bucket, String key) {
+        if (isFilesystemMode()) {
+            try {
+                Path path = getFallbackPath(bucket, key);
+                if (!Files.exists(path)) {
+                    throw new RuntimeException("File not found: " + key);
+                }
+                return Files.readAllBytes(path);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to read file: " + key, e);
+            }
+        }
         return getClient().getObjectAsBytes(
             GetObjectRequest.builder().bucket(bucket).key(key).build()
         ).asByteArray();
@@ -90,6 +151,15 @@ public class S3StorageService {
     }
 
     public void deleteObject(String bucket, String key) {
+        if (isFilesystemMode()) {
+            try {
+                Path path = getFallbackPath(bucket, key);
+                Files.deleteIfExists(path);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to delete file: " + key, e);
+            }
+            return;
+        }
         getClient().deleteObject(
             DeleteObjectRequest.builder().bucket(bucket).key(key).build()
         );
@@ -100,6 +170,22 @@ public class S3StorageService {
     }
 
     public List<String> listObjects(String bucket, String prefix) {
+        if (isFilesystemMode()) {
+            try {
+                Path basePath = getFallbackPath(bucket, prefix);
+                if (!Files.exists(basePath)) {
+                    return Collections.emptyList();
+                }
+                Path bucketRoot = getFallbackPath(bucket, "");
+                try (Stream<Path> walk = Files.walk(basePath)) {
+                    return walk.filter(Files::isRegularFile)
+                        .map(p -> bucketRoot.relativize(p).toString())
+                        .collect(Collectors.toList());
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to list files: " + prefix, e);
+            }
+        }
         ListObjectsV2Response response = getClient().listObjectsV2(
             ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).build()
         );

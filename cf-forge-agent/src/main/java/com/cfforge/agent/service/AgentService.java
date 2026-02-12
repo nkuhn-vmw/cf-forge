@@ -41,9 +41,13 @@ public class AgentService {
 
     public <T> T generateStructured(UUID projectId, String userMessage, Class<T> responseType) {
         final String context = resolveProjectContext(projectId);
+        final String manifest = resolveManifest(projectId);
 
         return chatClient.prompt()
-            .system(s -> s.param("projectContext", context))
+            .system(s -> s.param("projectContext", context)
+                          .param("availableBuildpacks", "java_buildpack_offline, python_buildpack, nodejs_buildpack, go_buildpack, staticfile_buildpack")
+                          .param("availableServices", "PostgreSQL, Redis, RabbitMQ, GenAI, S3")
+                          .param("currentManifest", manifest))
             .user(userMessage)
             .call()
             .entity(responseType);
