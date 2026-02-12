@@ -36,6 +36,12 @@ spring:
           jdbc:
             enabled: true
             initialize-schema: always
+    mcp:
+      server:
+        name: cf-forge
+        version: 0.1.0
+        type: SYNC
+        sse-message-endpoint: /mcp/messages
     vectorstore:
       pgvector:
         enabled: false

@@ -17,3 +17,4 @@ applications:
       - cf-forge-genai
     routes:
       - route: cf-forge-agent.apps.internal
+      - route: cf-forge-mcp.apps.tas-ndc.kuhn-labs.com
