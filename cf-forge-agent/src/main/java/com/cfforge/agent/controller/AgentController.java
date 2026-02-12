@@ -22,15 +22,24 @@ public class AgentController {
     @PostMapping(value = "/generate", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> generate(@RequestBody Map<String, String> body) {
         UUID conversationId = UUID.fromString(body.get("conversationId"));
-        UUID projectId = UUID.fromString(body.get("projectId"));
+        UUID projectId = parseUuidOrNull(body.get("projectId"));
         String message = body.get("message");
         return agentService.generate(conversationId, projectId, message);
     }
 
     @PostMapping("/structured")
     public GeneratedAppPlan generateStructured(@RequestBody Map<String, String> body) {
-        UUID projectId = UUID.fromString(body.get("projectId"));
+        UUID projectId = parseUuidOrNull(body.get("projectId"));
         String message = body.get("message");
         return agentService.generateStructured(projectId, message, GeneratedAppPlan.class);
+    }
+
+    private UUID parseUuidOrNull(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

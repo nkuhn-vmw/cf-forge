@@ -25,14 +25,14 @@ public class AgentService {
     }
 
     public Flux<String> generate(UUID conversationId, UUID projectId, String userMessage) {
-        Project project = projectRepository.findById(projectId).orElseThrow();
-        String projectContext = buildProjectContext(project);
+        final String context = resolveProjectContext(projectId);
+        final String manifest = resolveManifest(projectId);
 
         return chatClient.prompt()
-            .system(s -> s.param("projectContext", projectContext)
+            .system(s -> s.param("projectContext", context)
                           .param("availableBuildpacks", "java_buildpack_offline, python_buildpack, nodejs_buildpack, go_buildpack, staticfile_buildpack")
                           .param("availableServices", "PostgreSQL, Redis, RabbitMQ, GenAI, S3")
-                          .param("currentManifest", project.getCfManifest() != null ? project.getCfManifest().toString() : "none"))
+                          .param("currentManifest", manifest))
             .user(userMessage)
             .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId.toString()))
             .stream()
@@ -40,14 +40,29 @@ public class AgentService {
     }
 
     public <T> T generateStructured(UUID projectId, String userMessage, Class<T> responseType) {
-        Project project = projectRepository.findById(projectId).orElseThrow();
-        String projectContext = buildProjectContext(project);
+        final String context = resolveProjectContext(projectId);
 
         return chatClient.prompt()
-            .system(s -> s.param("projectContext", projectContext))
+            .system(s -> s.param("projectContext", context))
             .user(userMessage)
             .call()
             .entity(responseType);
+    }
+
+    private String resolveProjectContext(UUID projectId) {
+        if (projectId == null) {
+            return "No specific project context. Help the user build a new Cloud Foundry application.";
+        }
+        return projectRepository.findById(projectId)
+            .map(this::buildProjectContext)
+            .orElse("Project not found. Help the user as a general CF assistant.");
+    }
+
+    private String resolveManifest(UUID projectId) {
+        if (projectId == null) return "none";
+        return projectRepository.findById(projectId)
+            .map(p -> p.getCfManifest() != null ? p.getCfManifest().toString() : "none")
+            .orElse("none");
     }
 
     private String buildProjectContext(Project project) {

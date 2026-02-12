@@ -216,9 +216,8 @@ export const api = {
     recommend: (projectId: string) =>
       request<ServiceRecommendation[]>(`/marketplace/recommend?projectId=${projectId}`),
     provision: (projectId: string, data: ProvisionRequest) =>
-      request<void>(`/projects/${projectId}/services`, {
+      request<void>(`/marketplace/services/${data.serviceName}/provision?plan=${encodeURIComponent(data.plan)}&instanceName=${encodeURIComponent(data.instanceName)}&projectId=${projectId}`, {
         method: 'POST',
-        body: JSON.stringify(data),
       }),
   },
 
@@ -226,7 +225,7 @@ export const api = {
     list: () => request<Template[]>('/templates'),
     get: (slug: string) => request<Template>(`/templates/${slug}`),
     scaffold: (slug: string) =>
-      request<Project>(`/templates/${slug}/scaffold`, { method: 'POST' }),
+      request<Project>(`/templates/${slug}/use`, { method: 'POST' }),
     community: (page = 0, sort = 'popular') =>
       request<{ content: Template[]; totalPages: number; totalElements: number }>(
         `/templates/community?page=${page}&sort=${sort}`),

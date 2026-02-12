@@ -8,10 +8,7 @@ import com.cfforge.agent.advisor.RecursiveRefinementAdvisor;
 import com.cfforge.agent.advisor.ToolArgumentAugmenter;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
-import org.springframework.ai.chat.client.advisor.ToolCallAdvisor;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
-import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
 import org.springframework.ai.util.ResourceUtils;
@@ -19,7 +16,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
-import java.util.List;
 
 @Configuration
 public class AgentConfig {
@@ -33,9 +29,7 @@ public class AgentConfig {
             OperatorInstructionsAdvisor operatorInstructionsAdvisor,
             PromptInjectionAdvisor promptInjectionAdvisor,
             ToolArgumentAugmenter toolArgumentAugmenter,
-            RecursiveRefinementAdvisor recursiveRefinementAdvisor,
-            QuestionAnswerAdvisor cfDocsRagAdvisor,
-            ToolCallingManager toolCallingManager) {
+            RecursiveRefinementAdvisor recursiveRefinementAdvisor) {
 
         return builder
             .defaultSystem(ResourceUtils.getText("classpath:prompts/system.st"))
@@ -50,8 +44,6 @@ public class AgentConfig {
                         .maxMessages(50)
                         .build()
                 ).build(),
-                cfDocsRagAdvisor,
-                ToolCallAdvisor.builder().toolCallingManager(toolCallingManager).build(),
                 codeSafetyAdvisor,
                 recursiveRefinementAdvisor
             )

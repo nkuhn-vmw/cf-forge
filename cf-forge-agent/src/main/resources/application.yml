@@ -15,6 +15,9 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   flyway:
     enabled: false
+  sql:
+    init:
+      mode: always
   ai:
     openai:
       base-url: ${GENAI_BASE_URL:http://localhost:11434/v1}
@@ -32,8 +35,10 @@ spring:
         repository:
           jdbc:
             enabled: true
+            initialize-schema: always
     vectorstore:
       pgvector:
+        enabled: false
         dimensions: 768
         distance-type: cosine_distance
         index-type: hnsw

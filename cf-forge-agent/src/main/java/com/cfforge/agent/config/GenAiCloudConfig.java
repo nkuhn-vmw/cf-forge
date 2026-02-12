@@ -37,10 +37,11 @@ public class GenAiCloudConfig {
         }
 
         String chatModelName = discoverChatModelName(creds);
-        log.info("Creating ChatModel with GenAI service: model={}, apiBase={}", chatModelName, creds.apiBase);
+        String openAiBase = creds.apiBase + "/openai";
+        log.info("Creating ChatModel with GenAI service: model={}, apiBase={}", chatModelName, openAiBase);
 
         OpenAiApi openAiApi = OpenAiApi.builder()
-                .baseUrl(creds.apiBase)
+                .baseUrl(openAiBase)
                 .apiKey(creds.apiKey)
                 .build();
 
@@ -63,10 +64,11 @@ public class GenAiCloudConfig {
         }
 
         String embeddingModelName = discoverEmbeddingModelName(creds);
-        log.info("Creating EmbeddingModel with GenAI service: model={}, apiBase={}", embeddingModelName, creds.apiBase);
+        String openAiBase = creds.apiBase + "/openai";
+        log.info("Creating EmbeddingModel with GenAI service: model={}, apiBase={}", embeddingModelName, openAiBase);
 
         OpenAiApi openAiApi = OpenAiApi.builder()
-                .baseUrl(creds.apiBase)
+                .baseUrl(openAiBase)
                 .apiKey(creds.apiKey)
                 .build();
 
