@@ -38,16 +38,22 @@ public class AuthController {
     private final UserRepository userRepository;
     private final RestClient restClient;
     private final String domain;
+    private final String apiUrl;
+    private final String cookieDomain;
 
     public AuthController(SsoProperties ssoProperties,
                           OidcDiscoveryService oidcDiscovery,
                           UserRepository userRepository,
-                          @Value("${cf.forge.domain}") String domain) {
+                          @Value("${cf.forge.domain}") String domain,
+                          @Value("${cf.forge.api-url:}") String apiUrl,
+                          @Value("${cf.forge.cookie-domain:}") String cookieDomain) {
         this.ssoProperties = ssoProperties;
         this.oidcDiscovery = oidcDiscovery;
         this.userRepository = userRepository;
         this.restClient = RestClient.create();
         this.domain = domain;
+        this.apiUrl = apiUrl.isEmpty() ? domain : apiUrl;
+        this.cookieDomain = cookieDomain.isEmpty() ? null : cookieDomain;
     }
 
     @GetMapping("/login")
@@ -62,17 +68,21 @@ public class AuthController {
         String state = Base64.getUrlEncoder().withoutPadding()
             .encodeToString((nonce + "|" + redirect_uri).getBytes(StandardCharsets.UTF_8));
 
-        // Set state cookie for CSRF validation
-        ResponseCookie stateCookie = ResponseCookie.from(STATE_COOKIE, state)
+        // Set state cookie for CSRF validation (use shared cookie domain so it's
+        // available when callback goes directly to the API domain)
+        var stateCookieBuilder = ResponseCookie.from(STATE_COOKIE, state)
             .httpOnly(true)
             .secure(true)
             .sameSite("Lax")
             .path("/api/v1/auth")
-            .maxAge(600)
-            .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, stateCookie.toString());
+            .maxAge(600);
+        if (cookieDomain != null) {
+            stateCookieBuilder.domain(cookieDomain);
+        }
+        response.addHeader(HttpHeaders.SET_COOKIE, stateCookieBuilder.build().toString());
 
-        String callbackUrl = domain + "/api/v1/auth/callback";
+        // Use the API's own URL for callback (must match UAA registered redirect URIs)
+        String callbackUrl = apiUrl + "/api/v1/auth/callback";
         String authUrl = oidcDiscovery.getAuthorizationEndpoint()
             + "?response_type=code"
             + "&client_id=" + URLEncoder.encode(ssoProperties.clientId(), StandardCharsets.UTF_8)
@@ -109,8 +119,8 @@ public class AuthController {
             redirectPath = decoded.substring(pipeIdx + 1);
         }
 
-        // Exchange code for tokens
-        String callbackUrl = domain + "/api/v1/auth/callback";
+        // Exchange code for tokens (redirect_uri must match what was sent to authorize)
+        String callbackUrl = apiUrl + "/api/v1/auth/callback";
         String credentials = Base64.getEncoder()
             .encodeToString((ssoProperties.clientId() + ":" + ssoProperties.clientSecret())
                 .getBytes(StandardCharsets.UTF_8));
@@ -136,10 +146,11 @@ public class AuthController {
             }
 
             setTokenCookies(response, tokenResponse);
-            response.sendRedirect(redirectPath);
+            // Redirect to the UI domain (not relative, since callback is on API domain)
+            response.sendRedirect(domain + redirectPath);
         } catch (Exception e) {
             log.error("Token exchange failed", e);
-            response.sendRedirect("/login?error=token_exchange_failed");
+            response.sendRedirect(domain + "/login?error=token_exchange_failed");
         }
     }
 
@@ -223,37 +234,45 @@ public class AuthController {
             expiresIn = 3600;
         }
 
-        ResponseCookie accessCookie = ResponseCookie.from(ACCESS_COOKIE, accessToken)
+        var accessBuilder = ResponseCookie.from(ACCESS_COOKIE, accessToken)
             .httpOnly(true)
             .secure(true)
             .sameSite("Lax")
             .path("/api")
-            .maxAge(expiresIn)
-            .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+            .maxAge(expiresIn);
+        if (cookieDomain != null) {
+            accessBuilder.domain(cookieDomain);
+        }
+        response.addHeader(HttpHeaders.SET_COOKIE, accessBuilder.build().toString());
 
         String refreshToken = (String) tokenResponse.get("refresh_token");
         if (refreshToken != null) {
-            ResponseCookie refreshCookie = ResponseCookie.from(REFRESH_COOKIE, refreshToken)
+            var refreshBuilder = ResponseCookie.from(REFRESH_COOKIE, refreshToken)
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .path("/api/v1/auth")
-                .maxAge(604800) // 7 days
-                .build();
-            response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+                .maxAge(604800);
+            if (cookieDomain != null) {
+                refreshBuilder.domain(cookieDomain);
+            }
+            response.addHeader(HttpHeaders.SET_COOKIE, refreshBuilder.build().toString());
         }
     }
 
     private void clearAuthCookies(HttpServletResponse response) {
-        ResponseCookie clearAccess = ResponseCookie.from(ACCESS_COOKIE, "")
+        var clearAccessBuilder = ResponseCookie.from(ACCESS_COOKIE, "")
             .httpOnly(true).secure(true).sameSite("Lax")
-            .path("/api").maxAge(0).build();
-        ResponseCookie clearRefresh = ResponseCookie.from(REFRESH_COOKIE, "")
-            .httpOnly(true).secure(true).sameSite("Strict")
-            .path("/api/v1/auth").maxAge(0).build();
-        response.addHeader(HttpHeaders.SET_COOKIE, clearAccess.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, clearRefresh.toString());
+            .path("/api").maxAge(0);
+        var clearRefreshBuilder = ResponseCookie.from(REFRESH_COOKIE, "")
+            .httpOnly(true).secure(true).sameSite("Lax")
+            .path("/api/v1/auth").maxAge(0);
+        if (cookieDomain != null) {
+            clearAccessBuilder.domain(cookieDomain);
+            clearRefreshBuilder.domain(cookieDomain);
+        }
+        response.addHeader(HttpHeaders.SET_COOKIE, clearAccessBuilder.build().toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, clearRefreshBuilder.build().toString());
     }
 
     private String getCookieValue(HttpServletRequest request, String name) {

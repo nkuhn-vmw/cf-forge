@@ -34,7 +34,7 @@ spring:
           sso:
             client-id: ${SSO_CLIENT_ID:local-dev-client}
             client-secret: ${SSO_CLIENT_SECRET:local-dev-secret}
-            scope: openid,profile,email,roles,cfforge.admin
+            scope: openid,profile,email,roles
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
         provider:

@@ -39,7 +39,7 @@ public class AuditAspect {
             "@annotation(org.springframework.web.bind.annotation.PatchMapping)")
     public Object auditMutatingOperations(ProceedingJoinPoint joinPoint) throws Throwable {
         String action = joinPoint.getSignature().toShortString();
-        UUID userId = getCurrentUserId();
+        String uaaUserId = getCurrentUaaUserId();
         String username = getCurrentUsername();
         String ipAddress = getClientIp();
         String method = getHttpMethod();
@@ -56,7 +56,7 @@ public class AuditAspect {
             details.put("path", path);
             details.put("durationMs", durationMs);
 
-            auditService.log(userId, extractProjectId(joinPoint), action, details, ipAddress);
+            auditService.log(uaaUserId, extractProjectId(joinPoint), action, details, ipAddress);
 
             // Structured JSON log for CF syslog drain
             log.info("AUDIT action={} user={} ip={} method={} path={} status=success durationMs={}",
@@ -73,7 +73,7 @@ public class AuditAspect {
             details.put("error", e.getMessage());
             details.put("durationMs", durationMs);
 
-            auditService.log(userId, extractProjectId(joinPoint), action, details, ipAddress);
+            auditService.log(uaaUserId, extractProjectId(joinPoint), action, details, ipAddress);
 
             log.warn("AUDIT action={} user={} ip={} method={} path={} status=error error=\"{}\" durationMs={}",
                 action, username, ipAddress, method, path, e.getMessage(), durationMs);
@@ -82,14 +82,10 @@ public class AuditAspect {
         }
     }
 
-    private UUID getCurrentUserId() {
+    private String getCurrentUaaUserId() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof Jwt jwt) {
-            try {
-                return UUID.fromString(jwt.getSubject());
-            } catch (Exception e) {
-                return null;
-            }
+            return jwt.getSubject();
         }
         return null;
     }

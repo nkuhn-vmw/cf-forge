@@ -47,7 +47,7 @@ spring:
           sso:
             client-id: ${SSO_CLIENT_ID:local-dev-client}
             client-secret: ${SSO_CLIENT_SECRET:local-dev-secret}
-            scope: openid,profile,email,roles,cfforge.admin
+            scope: openid
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
         provider:
@@ -60,11 +60,13 @@ cf:
     endpoint: ${CF_API_ENDPOINT:https://api.sys.example.com}
   forge:
     domain: ${CF_FORGE_DOMAIN:http://localhost:5173}
+    api-url: ${CF_FORGE_API_URL:http://localhost:8080}
+    cookie-domain: ${CF_FORGE_COOKIE_DOMAIN:}
     sso:
       client-id: ${spring.security.oauth2.client.registration.sso.client-id:${SSO_CLIENT_ID:local-dev-client}}
       client-secret: ${spring.security.oauth2.client.registration.sso.client-secret:${SSO_CLIENT_SECRET:local-dev-secret}}
       issuer-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri:${SSO_ISSUER_URI:http://localhost:8080/uaa/oauth/token}}
-      scopes: openid,profile,email,roles,cfforge.admin
+      scopes: openid
 
 server:
   port: 8080
