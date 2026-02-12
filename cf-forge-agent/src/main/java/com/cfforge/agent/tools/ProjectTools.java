@@ -1,9 +1,11 @@
 package com.cfforge.agent.tools;
 
 import com.cfforge.common.entity.Project;
+import com.cfforge.common.entity.User;
 import com.cfforge.common.enums.Language;
 import com.cfforge.common.enums.ProjectStatus;
 import com.cfforge.common.repository.ProjectRepository;
+import com.cfforge.common.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
@@ -19,13 +21,27 @@ import java.util.stream.Collectors;
 @Component
 public class ProjectTools {
 
+    private static final String MCP_SERVICE_UAA_ID = "mcp-service";
+    private static final String MCP_SERVICE_EMAIL = "mcp-service@cf-forge.internal";
+
     private static final Logger log = LoggerFactory.getLogger(ProjectTools.class);
     private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
     private final WebClient workspaceClient;
 
-    public ProjectTools(ProjectRepository projectRepository, WebClient workspaceClient) {
+    public ProjectTools(ProjectRepository projectRepository, UserRepository userRepository, WebClient workspaceClient) {
         this.projectRepository = projectRepository;
+        this.userRepository = userRepository;
         this.workspaceClient = workspaceClient;
+    }
+
+    private User getOrCreateMcpServiceUser() {
+        return userRepository.findByUaaUserId(MCP_SERVICE_UAA_ID)
+            .orElseGet(() -> userRepository.save(User.builder()
+                .uaaUserId(MCP_SERVICE_UAA_ID)
+                .email(MCP_SERVICE_EMAIL)
+                .displayName("MCP Service Account")
+                .build()));
     }
 
     @Tool(description = "Create a new CF Forge project with a workspace for file storage. " +
@@ -47,6 +63,8 @@ public class ProjectTools {
             Language lang = Language.valueOf(language.toUpperCase());
             String buildpack = inferBuildpack(lang);
 
+            User owner = getOrCreateMcpServiceUser();
+
             Project project = Project.builder()
                 .name(name)
                 .slug(slug)
@@ -54,6 +72,7 @@ public class ProjectTools {
                 .language(lang)
                 .framework(framework)
                 .buildpack(buildpack)
+                .owner(owner)
                 .status(ProjectStatus.ACTIVE)
                 .workspaceId(workspaceId != null ? UUID.fromString(workspaceId.replace("\"", "")) : UUID.randomUUID())
                 .createdAt(Instant.now())
