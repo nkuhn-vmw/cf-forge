@@ -8,6 +8,7 @@ import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "audit_log")
@@ -15,6 +16,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class AuditLog {
 
     @Id

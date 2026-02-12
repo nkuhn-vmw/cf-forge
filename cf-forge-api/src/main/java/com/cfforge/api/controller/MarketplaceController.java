@@ -1,5 +1,6 @@
 package com.cfforge.api.controller;
 
+import com.cfforge.api.model.BuildpackInfo;
 import com.cfforge.api.service.CfClient;
 import com.cfforge.api.model.ServiceOffering;
 import com.cfforge.common.entity.Project;
@@ -23,6 +24,26 @@ public class MarketplaceController {
     @GetMapping("/services")
     public List<ServiceOffering> listServices() {
         return cfClient.listMarketplace().collectList().block();
+    }
+
+    @GetMapping("/buildpacks")
+    public List<BuildpackInfo> listBuildpacks() {
+        try {
+            return cfClient.listBuildpacks().collectList().block();
+        } catch (Exception e) {
+            // CF API may require auth for buildpacks; return common defaults
+            return List.of(
+                new BuildpackInfo(null, "java_buildpack_offline", "cflinuxfs4", 1, true),
+                new BuildpackInfo(null, "nodejs_buildpack", "cflinuxfs4", 2, true),
+                new BuildpackInfo(null, "python_buildpack", "cflinuxfs4", 3, true),
+                new BuildpackInfo(null, "go_buildpack", "cflinuxfs4", 4, true),
+                new BuildpackInfo(null, "dotnet_core_buildpack", "cflinuxfs4", 5, true),
+                new BuildpackInfo(null, "ruby_buildpack", "cflinuxfs4", 6, true),
+                new BuildpackInfo(null, "staticfile_buildpack", "cflinuxfs4", 7, true),
+                new BuildpackInfo(null, "nginx_buildpack", "cflinuxfs4", 8, true),
+                new BuildpackInfo(null, "binary_buildpack", "cflinuxfs4", 9, true)
+            );
+        }
     }
 
     @GetMapping("/recommend")
