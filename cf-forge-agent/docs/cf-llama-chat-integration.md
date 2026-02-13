@@ -20,7 +20,7 @@ CF-Forge exposes its Cloud Foundry development tools via the **MCP (Model Contex
                        ↓
 ┌──────────────────────────────────────────────┐
 │        cf-forge-agent (MCP Server)           │
-│  Exposes 15+ tools via MCP protocol:        │
+│  Exposes 24 tools via MCP protocol:          │
 │                                              │
 │  Project:  create, list, get, delete, update │
 │  Files:    read, write, list, delete         │
@@ -173,6 +173,63 @@ cf add-network-policy cf-llama-chat cf-forge-agent --port 8080 --protocol tcp
 ```
 
 Then register the MCP server URL as: `http://cf-forge-agent.apps.internal:8080/sse`
+
+## Programmatic Registration (API)
+
+Instead of using the admin UI, you can register cf-forge via the cf-llama-chat REST API:
+
+```bash
+# 1. Authenticate
+curl -c cookies.txt https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/auth/login -o /dev/null
+CSRF=$(grep XSRF cookies.txt | awk '{print $NF}')
+curl -c cookies.txt -b cookies.txt \
+  -X POST "https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -H "X-XSRF-TOKEN: $CSRF" \
+  -d "username=admin&password=<password>" -o /dev/null
+curl -c cookies.txt -b cookies.txt https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/ -o /dev/null
+CSRF=$(grep XSRF cookies.txt | awk '{print $NF}')
+
+# 2. Register MCP server
+curl -b cookies.txt \
+  -X POST "https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/api/admin/mcp/servers" \
+  -H "Content-Type: application/json" \
+  -H "X-XSRF-TOKEN: $CSRF" \
+  -d '{
+    "name": "cf-forge",
+    "description": "Cloud Foundry AI Development Platform",
+    "transportType": "SSE",
+    "url": "https://cf-forge-mcp.apps.tas-ndc.kuhn-labs.com/sse"
+  }'
+# Returns: {"name":"cf-forge","serverId":"<id>","success":true}
+
+# 3. Connect (discovers 24 tools)
+curl -b cookies.txt \
+  -X POST "https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/api/admin/mcp/servers/<id>/connect" \
+  -H "X-XSRF-TOKEN: $CSRF"
+
+# 4. Sync tools
+curl -b cookies.txt \
+  -X POST "https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/api/admin/mcp/servers/<id>/sync-tools" \
+  -H "X-XSRF-TOKEN: $CSRF"
+
+# 5. Create skills (get tool IDs first)
+TOOLS=$(curl -s -b cookies.txt \
+  "https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/api/admin/tools?mcpServerId=<id>" \
+  -H "X-XSRF-TOKEN: $CSRF")
+
+# Create skill with comma-separated tool IDs
+curl -b cookies.txt \
+  -X POST "https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/api/admin/skills" \
+  -H "Content-Type: application/json" \
+  -H "X-XSRF-TOKEN: $CSRF" \
+  -d '{
+    "name": "CF App Builder",
+    "description": "Build and deploy CF apps from natural language",
+    "systemPromptAugmentation": "You are a CF app builder...",
+    "toolIds": "<id1>,<id2>,<id3>"
+  }'
+```
 
 ## Troubleshooting
 
