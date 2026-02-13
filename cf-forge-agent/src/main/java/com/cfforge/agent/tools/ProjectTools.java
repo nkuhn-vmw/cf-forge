@@ -52,12 +52,8 @@ public class ProjectTools {
             @ToolParam(description = "Framework (e.g., 'spring-boot', 'flask', 'express')") String framework,
             @ToolParam(description = "Short description of the project") String description) {
         try {
-            // Create workspace via workspace service
-            String workspaceId = workspaceClient.post()
-                .uri("/workspace")
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+            // Generate workspace ID — the workspace service uses this as a key for file storage
+            UUID workspaceId = UUID.randomUUID();
 
             String slug = name.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
             Language lang = Language.valueOf(language.toUpperCase());
@@ -74,7 +70,7 @@ public class ProjectTools {
                 .buildpack(buildpack)
                 .owner(owner)
                 .status(ProjectStatus.ACTIVE)
-                .workspaceId(workspaceId != null ? UUID.fromString(workspaceId.replace("\"", "")) : UUID.randomUUID())
+                .workspaceId(workspaceId)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
@@ -36,7 +37,7 @@ public class WorkspaceTools {
             @ToolParam(description = "File content") String content) {
         workspaceClient.put()
             .uri("/workspace/{id}/files/{path}", workspaceId, path)
-            .bodyValue(content)
+            .bodyValue(Map.of("content", content))
             .retrieve()
             .toBodilessEntity()
             .block();

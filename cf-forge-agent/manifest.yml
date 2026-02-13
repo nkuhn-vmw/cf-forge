@@ -11,6 +11,7 @@ applications:
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
       SPRING_PROFILES_ACTIVE: cloud
       CFFORGE_CF_API_URL: https://api.sys.tas-ndc.kuhn-labs.com
+      CFFORGE_WORKSPACE_URL: https://cf-forge-workspace.apps.tas-ndc.kuhn-labs.com
     services:
       - cf-forge-db
       - cf-forge-mq

@@ -15,3 +15,4 @@ applications:
       - cf-forge-cache
     routes:
       - route: cf-forge-workspace.apps.internal
+      - route: cf-forge-workspace.apps.tas-ndc.kuhn-labs.com

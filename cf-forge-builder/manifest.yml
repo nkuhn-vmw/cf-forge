@@ -15,3 +15,4 @@ applications:
       - cf-forge-db
     routes:
       - route: cf-forge-builder.apps.internal
+      - route: cf-forge-builder.apps.tas-ndc.kuhn-labs.com
