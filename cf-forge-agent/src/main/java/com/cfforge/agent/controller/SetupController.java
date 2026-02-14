@@ -20,8 +20,8 @@ public class SetupController {
         return Map.of(
             "name", "cf-forge",
             "description", "Cloud Foundry AI Development Platform — provides tools for building, deploying, and managing CF applications",
-            "url", externalUrl + "/sse",
-            "transportType", "SSE",
+            "url", externalUrl + "/mcp",
+            "transportType", "STREAMABLE_HTTP",
             "skills", getSkillDefinitions()
         );
     }

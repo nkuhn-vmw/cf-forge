@@ -12,6 +12,7 @@ applications:
       SPRING_PROFILES_ACTIVE: cloud
       CFFORGE_CF_API_URL: https://api.sys.tas-ndc.kuhn-labs.com
       CFFORGE_WORKSPACE_URL: https://cf-forge-workspace.apps.tas-ndc.kuhn-labs.com
+      CFFORGE_MCP_API_KEY: af727dfd7aa29596b1fa356de7088118f628e3749bad605d
     services:
       - cf-forge-db
       - cf-forge-mq

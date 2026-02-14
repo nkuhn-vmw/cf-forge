@@ -2,7 +2,7 @@
 
 ## Overview
 
-CF-Forge exposes its Cloud Foundry development tools via the **MCP (Model Context Protocol)** standard. CF-Llama-Chat connects to CF-Forge as an MCP server, making all tools available to the LLM during chat sessions. **No code changes to CF-Llama-Chat are required.**
+CF-Forge exposes its Cloud Foundry development tools via the **MCP (Model Context Protocol)** standard using **Streamable HTTP** transport (MCP spec 2025-03-26). CF-Llama-Chat connects to CF-Forge as an MCP server, making all tools available to the LLM during chat sessions. **No code changes to CF-Llama-Chat are required.**
 
 ## Architecture
 
@@ -16,7 +16,8 @@ CF-Forge exposes its Cloud Foundry development tools via the **MCP (Model Contex
 │  Users select "CF App Builder" skill       │ │
 │  LLM calls cf-forge tools via MCP ←───────┘ │
 └──────────────────────┬──────────────────────┘
-                       │ MCP Protocol (SSE/HTTP)
+                       │ MCP Streamable HTTP (POST /mcp)
+                       │ Auth: Bearer <API key>
                        ↓
 ┌──────────────────────────────────────────────┐
 │        cf-forge-agent (MCP Server)           │
@@ -30,17 +31,16 @@ CF-Forge exposes its Cloud Foundry development tools via the **MCP (Model Contex
 │  Services: recommend, list bound, provision  │
 │  Docs:     search CF docs, buildpack docs    │
 │                                              │
-│  Proxies to: workspace, builder, api         │
+│  Proxies to: workspace, builder              │
 └──────────────────────────────────────────────┘
 ```
 
 ## Prerequisites
 
 1. **CF-Forge services deployed** on Tanzu Application Service:
-   - `cf-forge-agent` — MCP server + AI agent
+   - `cf-forge-agent` — MCP server (core)
    - `cf-forge-workspace` — file storage service
    - `cf-forge-builder` — build pipeline service
-   - `cf-forge-api` — project/data API
 
 2. **CF-Llama-Chat deployed** with MCP server support enabled
 
@@ -63,10 +63,19 @@ mvn package -DskipTests -pl cf-forge-agent -am
 cf push cf-forge-agent -f cf-forge-agent/manifest.yml
 ```
 
-Verify the MCP SSE endpoint is accessible:
+Verify the MCP Streamable HTTP endpoint is accessible:
 
 ```bash
-curl -N https://cf-forge-mcp.apps.tas-ndc.kuhn-labs.com/sse
+# Should return 401 (auth required)
+curl -s -o /dev/null -w "%{http_code}" https://cf-forge-mcp.apps.tas-ndc.kuhn-labs.com/mcp
+
+# Should return 200 with MCP initialize response
+curl -s -X POST \
+  -H "Authorization: Bearer <CFFORGE_MCP_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  https://cf-forge-mcp.apps.tas-ndc.kuhn-labs.com/mcp \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}'
 ```
 
 Verify the setup endpoint:
@@ -83,12 +92,10 @@ In the CF-Llama-Chat admin portal:
 2. Click **Add New Server**
 3. Fill in:
    - **Name**: `cf-forge`
-   - **URL**: `https://cf-forge-mcp.apps.tas-ndc.kuhn-labs.com/sse`
-   - **Transport**: SSE
-4. Click **Connect** and verify tools are discovered
-
-Alternatively, if both apps are in the same CF space, use the internal route:
-- **URL**: `http://cf-forge-agent.apps.internal:8080/sse`
+   - **URL**: `https://cf-forge-mcp.apps.tas-ndc.kuhn-labs.com/mcp`
+   - **Transport**: STREAMABLE_HTTP
+   - **Headers**: `Authorization: Bearer <CFFORGE_MCP_API_KEY>`
+4. Click **Connect** and verify 24 tools are discovered
 
 ## Step 3: Import Skills
 
@@ -160,6 +167,15 @@ In CF-Llama-Chat admin, create these skills:
 | `listBoundServices` | List services bound to an app |
 | `getServiceProvisioningGuide` | Step-by-step service setup guide |
 
+## Authentication
+
+The MCP server requires an API key for all requests to `/mcp`:
+
+- **Header**: `Authorization: Bearer <CFFORGE_MCP_API_KEY>`
+- The API key is configured via the `CFFORGE_MCP_API_KEY` environment variable in the agent's manifest.yml
+- Requests without a valid API key receive a `401 Unauthorized` response
+- Health/actuator endpoints are not protected
+
 ## Networking Options
 
 ### Option A: External Route (Default)
@@ -172,7 +188,7 @@ If both apps are in the same CF foundation, use internal routing for lower laten
 cf add-network-policy cf-llama-chat cf-forge-agent --port 8080 --protocol tcp
 ```
 
-Then register the MCP server URL as: `http://cf-forge-agent.apps.internal:8080/sse`
+Then register the MCP server URL as: `http://cf-forge-agent.apps.internal:8080/mcp`
 
 ## Programmatic Registration (API)
 
@@ -190,7 +206,7 @@ curl -c cookies.txt -b cookies.txt \
 curl -c cookies.txt -b cookies.txt https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/ -o /dev/null
 CSRF=$(grep XSRF cookies.txt | awk '{print $NF}')
 
-# 2. Register MCP server
+# 2. Register MCP server (Streamable HTTP with auth)
 curl -b cookies.txt \
   -X POST "https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/api/admin/mcp/servers" \
   -H "Content-Type: application/json" \
@@ -198,8 +214,9 @@ curl -b cookies.txt \
   -d '{
     "name": "cf-forge",
     "description": "Cloud Foundry AI Development Platform",
-    "transportType": "SSE",
-    "url": "https://cf-forge-mcp.apps.tas-ndc.kuhn-labs.com/sse"
+    "transportType": "STREAMABLE_HTTP",
+    "url": "https://cf-forge-mcp.apps.tas-ndc.kuhn-labs.com/mcp",
+    "headers": {"Authorization": "Bearer <CFFORGE_MCP_API_KEY>"}
   }'
 # Returns: {"name":"cf-forge","serverId":"<id>","success":true}
 
@@ -212,30 +229,14 @@ curl -b cookies.txt \
 curl -b cookies.txt \
   -X POST "https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/api/admin/mcp/servers/<id>/sync-tools" \
   -H "X-XSRF-TOKEN: $CSRF"
-
-# 5. Create skills (get tool IDs first)
-TOOLS=$(curl -s -b cookies.txt \
-  "https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/api/admin/tools?mcpServerId=<id>" \
-  -H "X-XSRF-TOKEN: $CSRF")
-
-# Create skill with comma-separated tool IDs
-curl -b cookies.txt \
-  -X POST "https://cf-llama-chat.apps.tas-ndc.kuhn-labs.com/api/admin/skills" \
-  -H "Content-Type: application/json" \
-  -H "X-XSRF-TOKEN: $CSRF" \
-  -d '{
-    "name": "CF App Builder",
-    "description": "Build and deploy CF apps from natural language",
-    "systemPromptAugmentation": "You are a CF app builder...",
-    "toolIds": "<id1>,<id2>,<id3>"
-  }'
 ```
 
 ## Troubleshooting
 
 ### MCP connection fails
 - Check that cf-forge-agent is running: `cf app cf-forge-agent`
-- Verify the SSE endpoint: `curl -N <url>/sse`
+- Verify the endpoint responds: `curl -s -o /dev/null -w "%{http_code}" https://cf-forge-mcp.apps.tas-ndc.kuhn-labs.com/mcp` (should be 401)
+- Check auth header is configured correctly in cf-llama-chat MCP server settings
 - Check agent logs: `cf logs cf-forge-agent --recent`
 
 ### Tools not discovered

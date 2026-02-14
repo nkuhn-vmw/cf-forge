@@ -39,9 +39,11 @@ spring:
     mcp:
       server:
         name: cf-forge
-        version: 0.1.0
+        version: 0.2.0
         type: SYNC
-        sse-message-endpoint: /mcp/messages
+        protocol: STREAMABLE
+        streamable-http:
+          mcp-endpoint: /mcp
     vectorstore:
       pgvector:
         enabled: false
@@ -70,6 +72,10 @@ spring:
             consumer:
               auto-bind-dlq: true
               republish-to-dlq: true
+
+cfforge:
+  mcp:
+    api-key: ${CFFORGE_MCP_API_KEY:changeme}
 
 s3:
   endpoint: http://localhost:9000
