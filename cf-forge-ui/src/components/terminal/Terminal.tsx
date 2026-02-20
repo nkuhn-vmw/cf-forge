@@ -59,11 +59,7 @@ export function Terminal({ projectId }: { projectId: string }) {
   return (
     <div
       ref={containerRef}
-      style={{
-        height: '100%',
-        padding: '4px',
-        backgroundColor: '#0d1117',
-      }}
+      className="terminal-container"
     />
   )
 }

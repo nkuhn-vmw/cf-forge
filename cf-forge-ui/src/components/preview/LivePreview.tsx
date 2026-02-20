@@ -10,32 +10,27 @@ export function LivePreview({ projectId }: { projectId: string }) {
   const url = latestDeployed?.deploymentUrl
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--bg-secondary)' }}>
-      <div
-        style={{
-          display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px',
-          borderBottom: '1px solid var(--border)', fontSize: '12px',
-        }}
-      >
+    <div className="col-layout" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+      <div className="ws-toolbar">
         <Globe size={14} color="var(--accent)" />
-        <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Live Preview</span>
-        <div style={{ flex: 1 }} />
+        <span className="font-semibold text-secondary">Live Preview</span>
+        <div className="flex-1" />
         {url && (
           <>
             <button
               onClick={() => setKey((k) => k + 1)}
-              style={{ padding: '2px 6px', background: 'none', border: 'none', color: 'var(--text-muted)', display: 'flex' }}
+              className="btn-icon"
               title="Refresh"
             >
               <RefreshCcw size={13} />
             </button>
-            <a href={url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', color: 'var(--text-muted)' }} title="Open in new tab">
+            <a href={url} target="_blank" rel="noopener noreferrer" className="btn-icon" title="Open in new tab">
               <ExternalLink size={13} />
             </a>
           </>
         )}
       </div>
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div className="flex-1 overflow-hidden">
         {url ? (
           <iframe
             key={key}
@@ -45,9 +40,9 @@ export function LivePreview({ projectId }: { projectId: string }) {
             sandbox="allow-scripts allow-same-origin allow-forms"
           />
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', flexDirection: 'column', gap: '8px' }}>
-            <Globe size={32} style={{ opacity: 0.3 }} />
-            <span style={{ fontSize: '13px' }}>Deploy your app to see a live preview</span>
+          <div className="editor-empty">
+            <Globe size={32} className="empty-state-icon" />
+            <span className="empty-state-text">Deploy your app to see a live preview</span>
           </div>
         )}
       </div>

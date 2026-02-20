@@ -23,36 +23,27 @@ export function ProjectDashboard() {
   }
 
   return (
-    <div style={{ height: '100%', overflow: 'auto', backgroundColor: 'var(--bg-primary)' }}>
-      <header
-        style={{
-          padding: '16px 24px',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          backgroundColor: 'var(--bg-secondary)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <div className="page">
+      <header className="page-header-lg">
+        <div className="row gap-12">
           <Code2 size={24} color="var(--accent)" />
-          <h1 style={{ fontSize: '18px', fontWeight: 600 }}>CF Forge</h1>
+          <h1 className="text-2xl font-semibold">CF Forge</h1>
         </div>
-        <nav style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <Link to="/builder" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '13px' }}>
+        <nav className="row gap-16">
+          <Link to="/builder" className="nav-link">
             <Rocket size={14} /> Builder
           </Link>
-          <Link to="/marketplace" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '13px' }}>
+          <Link to="/marketplace" className="nav-link">
             <Store size={14} /> Marketplace
           </Link>
-          <Link to="/templates" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '13px' }}>
+          <Link to="/templates" className="nav-link">
             <BookTemplate size={14} /> Templates
           </Link>
-          <div style={{ marginLeft: '8px', paddingLeft: '16px', borderLeft: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{user?.userName || user?.email}</span>
+          <div className="row gap-8" style={{ marginLeft: '8px', paddingLeft: '16px', borderLeft: '1px solid var(--border)' }}>
+            <span className="text-base text-secondary">{user?.userName || user?.email}</span>
             <button
               onClick={() => { logout(); navigate('/login') }}
-              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '12px', cursor: 'pointer' }}
+              className="btn-icon"
               title="Sign out"
             >
               <LogOut size={14} />
@@ -61,52 +52,39 @@ export function ProjectDashboard() {
         </nav>
       </header>
 
-      <div style={{ maxWidth: '960px', margin: '0 auto', padding: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 600 }}>Projects</h2>
+      <div className="content-container">
+        <div className="row-between mb-24">
+          <h2 className="text-3xl font-semibold">Projects</h2>
           <button
             onClick={() => setShowCreate(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '8px 16px', backgroundColor: 'var(--accent)', color: 'white',
-              border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 500,
-            }}
+            className="btn-primary"
           >
             <Plus size={14} /> New Project
           </button>
         </div>
 
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading projects...</div>
+          <div className="empty-state">Loading projects...</div>
         ) : !projects?.length ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-            <Code2 size={48} style={{ marginBottom: '16px', opacity: 0.3 }} />
-            <p style={{ fontSize: '16px', marginBottom: '8px' }}>No projects yet</p>
-            <p style={{ fontSize: '13px' }}>Create your first Cloud Foundry application</p>
+          <div className="empty-state">
+            <Code2 size={48} className="empty-state-icon" />
+            <p className="empty-state-title">No projects yet</p>
+            <p className="empty-state-text">Create your first Cloud Foundry application</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+          <div className="grid-auto-300">
             {projects.map((project) => (
               <div
                 key={project.id}
                 onClick={() => navigate(`/workspace/${project.id}`)}
-                style={{
-                  padding: '16px',
-                  backgroundColor: 'var(--bg-secondary)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'border-color 0.2s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+                className="card-clickable"
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 600 }}>{project.name}</h3>
-                  <div style={{ display: 'flex', gap: '4px' }}>
+                <div className="row-between mb-8">
+                  <h3 className="text-lg font-semibold">{project.name}</h3>
+                  <div className="row gap-4">
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate(`/workspace/${project.id}`) }}
-                      style={{ padding: '4px', background: 'none', border: 'none', color: 'var(--text-muted)' }}
+                      className="btn-icon"
                     >
                       <Settings size={14} />
                     </button>
@@ -115,26 +93,21 @@ export function ProjectDashboard() {
                         e.stopPropagation()
                         if (confirm('Delete this project?')) deleteProject.mutate(project.id)
                       }}
-                      style={{ padding: '4px', background: 'none', border: 'none', color: 'var(--text-muted)' }}
+                      className="btn-icon"
                     >
                       <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                <div className="row gap-8 text-base text-secondary mb-8">
                   <span
-                    style={{
-                      display: 'inline-block',
-                      width: '10px',
-                      height: '10px',
-                      borderRadius: '50%',
-                      backgroundColor: languageColors[project.language] ?? 'var(--text-muted)',
-                    }}
+                    className="lang-dot"
+                    style={{ backgroundColor: languageColors[project.language] ?? 'var(--text-muted)' }}
                   />
                   <span>{project.language}</span>
                   {project.framework && <span>/ {project.framework}</span>}
                 </div>
-                <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                <div className="text-sm text-muted">
                   Updated {new Date(project.updatedAt).toLocaleDateString()}
                 </div>
               </div>

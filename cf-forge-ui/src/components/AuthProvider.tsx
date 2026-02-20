@@ -10,15 +10,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div style={{
-        height: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'var(--bg-primary)',
-        color: 'var(--text-secondary)',
-        fontSize: '14px',
-      }}>
+      <div className="loading-screen">
         Loading...
       </div>
     )

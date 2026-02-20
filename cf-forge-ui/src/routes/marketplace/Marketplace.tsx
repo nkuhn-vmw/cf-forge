@@ -57,54 +57,34 @@ export function Marketplace() {
   }
 
   return (
-    <div style={{ height: '100%', overflow: 'auto', backgroundColor: 'var(--bg-primary)' }}>
-      <header
-        style={{
-          padding: '12px 24px',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          backgroundColor: 'var(--bg-secondary)',
-        }}
-      >
-        <Link to="/dashboard" style={{ color: 'var(--text-muted)', display: 'flex' }}>
+    <div className="page">
+      <header className="page-header">
+        <Link to="/dashboard" className="btn-icon">
           <ArrowLeft size={18} />
         </Link>
         <Store size={20} color="var(--accent)" />
-        <h1 style={{ fontSize: '16px', fontWeight: 600 }}>Service Marketplace</h1>
+        <h1 className="page-header-title">Service Marketplace</h1>
       </header>
 
-      <div style={{ maxWidth: '960px', margin: '0 auto', padding: '24px' }}>
+      <div className="content-container">
         {/* AI Recommendations */}
         {recommendations && recommendations.length > 0 && (
-          <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--accent)', borderRadius: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <div className="recommendation-card">
+            <div className="row mb-12">
               <Sparkles size={16} color="var(--accent)" />
-              <span style={{ fontSize: '13px', fontWeight: 600 }}>AI Recommended Services</span>
+              <span className="text-base font-semibold">AI Recommended Services</span>
             </div>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <div className="row gap-12" style={{ flexWrap: 'wrap' }}>
               {recommendations.map((rec) => (
-                <div
-                  key={rec.serviceName}
-                  style={{
-                    padding: '10px 14px', backgroundColor: 'var(--bg-primary)',
-                    border: '1px solid var(--border)', borderRadius: '6px',
-                    display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px',
-                  }}
-                >
+                <div key={rec.serviceName} className="card row gap-10 text-base">
                   <div>
-                    <div style={{ fontWeight: 500 }}>{rec.serviceName} <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>({rec.plan})</span></div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px' }}>{rec.reason}</div>
+                    <div className="font-medium">{rec.serviceName} <span className="text-muted text-sm">({rec.plan})</span></div>
+                    <div className="text-muted text-sm" style={{ marginTop: '2px' }}>{rec.reason}</div>
                   </div>
                   <button
                     onClick={() => handleProvision(rec.serviceName, rec.plan)}
                     disabled={provisioningName === rec.serviceName}
-                    style={{
-                      padding: '4px 10px', backgroundColor: 'var(--accent)', border: 'none',
-                      borderRadius: '4px', color: 'white', fontSize: '11px', display: 'flex',
-                      alignItems: 'center', gap: '4px', whiteSpace: 'nowrap',
-                    }}
+                    className="btn-primary btn-sm nowrap"
                   >
                     {provisioningName === rec.serviceName ? <Loader2 size={11} /> : <Plus size={11} />}
                     Bind
@@ -116,40 +96,25 @@ export function Marketplace() {
         )}
 
         {/* Search + Filter */}
-        <div style={{ marginBottom: '20px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <div
-            style={{
-              flex: 1, display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
-              backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)',
-              borderRadius: '8px',
-            }}
-          >
+        <div className="row mb-20 gap-12">
+          <div className="search-bar">
             <Search size={16} color="var(--text-muted)" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search services..."
-              style={{
-                flex: 1, background: 'none', border: 'none', color: 'var(--text-primary)',
-                fontSize: '14px', outline: 'none',
-              }}
             />
           </div>
         </div>
 
         {/* Category chips */}
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <div className="row gap-6 mb-20" style={{ flexWrap: 'wrap' }}>
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              style={{
-                padding: '4px 12px', fontSize: '12px', borderRadius: '12px', border: 'none',
-                backgroundColor: activeCategory === cat ? 'var(--accent)' : 'var(--bg-tertiary)',
-                color: activeCategory === cat ? 'white' : 'var(--text-secondary)',
-                display: 'flex', alignItems: 'center', gap: '4px',
-              }}
+              className={`chip-toggle ${activeCategory === cat ? 'active' : ''}`}
             >
               {cat === 'All' ? <Filter size={11} /> : <Tag size={11} />}
               {cat}
@@ -158,51 +123,37 @@ export function Marketplace() {
         </div>
 
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading marketplace...</div>
+          <div className="empty-state-sm">Loading marketplace...</div>
         ) : !filtered?.length ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-            <Store size={48} style={{ marginBottom: '16px', opacity: 0.3 }} />
-            <p style={{ fontSize: '16px', marginBottom: '8px' }}>
+          <div className="empty-state">
+            <Store size={48} className="empty-state-icon" />
+            <p className="empty-state-title">
               {searchTerm || activeCategory !== 'All' ? 'No matching services' : 'No services available'}
             </p>
-            <p style={{ fontSize: '13px' }}>
+            <p className="empty-state-text">
               {searchTerm || activeCategory !== 'All' ? 'Try adjusting your filters' : 'Connect a CF target to browse the marketplace'}
             </p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+          <div className="grid-auto-280">
             {filtered.map((service) => {
               const Icon = SERVICE_ICONS[service.name] ?? Gauge
               return (
-                <div
-                  key={service.name}
-                  style={{
-                    padding: '20px',
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '8px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                <div key={service.name} className="card-lg">
+                  <div className="row gap-10 mb-10">
                     <Icon size={20} color="var(--accent)" />
-                    <h3 style={{ fontSize: '15px', fontWeight: 600 }}>{service.name}</h3>
-                    <span style={{ fontSize: '10px', padding: '1px 6px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '3px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                    <h3 className="text-lg font-semibold">{service.name}</h3>
+                    <span className="badge-category">
                       {categorize(service.name)}
                     </span>
                   </div>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.5' }}>
+                  <p className="text-base text-secondary mb-12" style={{ lineHeight: '1.5' }}>
                     {service.description}
                   </p>
                   {service.plans?.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
+                    <div className="row gap-4 mb-12" style={{ flexWrap: 'wrap' }}>
                       {service.plans.map((plan) => (
-                        <span
-                          key={plan}
-                          style={{
-                            padding: '2px 8px', fontSize: '11px', backgroundColor: 'var(--bg-tertiary)',
-                            borderRadius: '4px', color: 'var(--text-muted)',
-                          }}
-                        >
+                        <span key={plan} className="badge">
                           {plan}
                         </span>
                       ))}
@@ -212,12 +163,7 @@ export function Marketplace() {
                     <button
                       onClick={() => handleProvision(service.name, service.plans[0])}
                       disabled={provisioningName === service.name || provision.isSuccess}
-                      style={{
-                        width: '100%', padding: '6px 12px', backgroundColor: 'var(--bg-tertiary)',
-                        border: '1px solid var(--border)', borderRadius: '4px',
-                        color: 'var(--text-primary)', fontSize: '12px', display: 'flex',
-                        alignItems: 'center', justifyContent: 'center', gap: '6px',
-                      }}
+                      className="btn-provision"
                     >
                       {provisioningName === service.name ? (
                         <><Loader2 size={12} /> Provisioning...</>

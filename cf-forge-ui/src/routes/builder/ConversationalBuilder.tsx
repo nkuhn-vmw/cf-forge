@@ -99,56 +99,27 @@ export function ConversationalBuilder() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--bg-primary)' }}>
-      <header
-        style={{
-          padding: '12px 24px',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          backgroundColor: 'var(--bg-secondary)',
-        }}
-      >
-        <Link to="/dashboard" style={{ color: 'var(--text-muted)', display: 'flex' }}>
+    <div className="col-layout">
+      <header className="page-header">
+        <Link to="/dashboard" className="btn-icon">
           <ArrowLeft size={18} />
         </Link>
         <Sparkles size={20} color="var(--accent)" />
-        <h1 style={{ fontSize: '16px', fontWeight: 600 }}>Conversational Builder</h1>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '2px 8px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '4px' }}>
-          AI-Powered
-        </span>
+        <h1 className="page-header-title">Conversational Builder</h1>
+        <span className="badge-muted">AI-Powered</span>
       </header>
 
-      <div style={{ flex: 1, overflow: 'auto', maxWidth: '800px', width: '100%', margin: '0 auto', padding: '24px' }} ref={scrollRef}>
+      <div className="chat-messages content-container-md" style={{ padding: '24px' }} ref={scrollRef}>
         {messages.map((msg, i) => (
-          <div key={i} style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div
-                style={{
-                  width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  backgroundColor: msg.role === 'user' ? 'var(--accent)' : 'var(--bg-tertiary)',
-                }}
-              >
-                {msg.role === 'user' ? <User size={16} color="white" /> : <Bot size={16} color="var(--success)" />}
+          <div key={i} className="mb-20">
+            <div className="chat-message gap-12">
+              <div className={`chat-avatar-lg ${msg.role === 'user' ? 'chat-avatar-user' : 'chat-avatar-bot'}`}>
+                {msg.role === 'user' ? <User size={16} color="white" /> : <Bot size={16} color="white" />}
               </div>
-              <div
-                style={{
-                  padding: '12px 16px',
-                  backgroundColor: msg.role === 'user' ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  lineHeight: '1.7',
-                  color: 'var(--text-primary)',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  maxWidth: '640px',
-                }}
-              >
+              <div className={msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-bot'}>
                 {msg.content}
                 {streaming && i === messages.length - 1 && msg.role === 'assistant' && (
-                  <span style={{ color: 'var(--accent)' }}>|</span>
+                  <span className="chat-cursor">|</span>
                 )}
               </div>
             </div>
@@ -157,12 +128,7 @@ export function ConversationalBuilder() {
                 <button
                   onClick={handleCreateProject}
                   disabled={createProject.isPending}
-                  style={{
-                    padding: '8px 16px', backgroundColor: 'var(--success)', border: 'none',
-                    borderRadius: '6px', color: 'white', display: 'flex', alignItems: 'center',
-                    gap: '6px', fontSize: '13px', fontWeight: 500,
-                    opacity: createProject.isPending ? 0.6 : 1,
-                  }}
+                  className={`btn-success${createProject.isPending ? ' btn-disabled' : ''}`}
                 >
                   {createProject.isPending ? <Loader2 size={14} className="spin" /> : <FolderPlus size={14} />}
                   Create Project & Open Workspace
@@ -173,8 +139,8 @@ export function ConversationalBuilder() {
         ))}
       </div>
 
-      <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)' }}>
-        <div style={{ display: 'flex', gap: '12px', maxWidth: '800px', margin: '0 auto' }}>
+      <div className="chat-input-bar-lg">
+        <div className="row gap-12 content-container-md">
           <input
             type="text"
             value={input}
@@ -182,21 +148,12 @@ export function ConversationalBuilder() {
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder="Describe the app you want to build..."
             disabled={streaming}
-            style={{
-              flex: 1, padding: '12px 16px', backgroundColor: 'var(--bg-primary)',
-              border: '1px solid var(--border)', borderRadius: '8px',
-              color: 'var(--text-primary)', fontSize: '14px', outline: 'none',
-            }}
+            className="form-input flex-1 btn-lg"
           />
           <button
             onClick={handleSend}
             disabled={streaming || !input.trim()}
-            style={{
-              padding: '12px 20px', backgroundColor: 'var(--accent)', border: 'none',
-              borderRadius: '8px', color: 'white', display: 'flex', alignItems: 'center',
-              gap: '6px', fontSize: '14px', fontWeight: 500,
-              opacity: streaming || !input.trim() ? 0.5 : 1,
-            }}
+            className={`btn-primary btn-lg${streaming || !input.trim() ? ' btn-disabled' : ''}`}
           >
             <Send size={16} /> Send
           </button>

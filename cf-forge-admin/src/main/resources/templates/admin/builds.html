@@ -7,18 +7,46 @@
     <h1>Build Metrics</h1>
     <div class="metrics-grid">
         <div class="metric-card">
+            <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9"/>
+                <path d="m18 15 4-4"/>
+                <path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/>
+            </svg>
             <div class="metric-label">Total Builds</div>
             <div class="metric-value" th:text="${metrics['totalBuilds']} ?: '0'">0</div>
         </div>
         <div class="metric-card">
+            <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9"/>
+                <path d="m18 15 4-4"/>
+                <path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/>
+            </svg>
             <div class="metric-label">Success Rate</div>
             <div class="metric-value" th:text="${metrics['successRate'] + '%'} ?: '0%'">0%</div>
         </div>
         <div class="metric-card">
+            <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9"/>
+                <path d="m18 15 4-4"/>
+                <path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/>
+            </svg>
             <div class="metric-label">Avg Duration</div>
             <div class="metric-value" th:text="${metrics['avgDurationMs'] != null ? #numbers.formatDecimal(metrics['avgDurationMs'] / 1000.0, 1, 1) + 's' : '0s'}">0s</div>
         </div>
         <div class="metric-card">
+            <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9"/>
+                <path d="m18 15 4-4"/>
+                <path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/>
+            </svg>
             <div class="metric-label">Failed</div>
             <div class="metric-value" th:text="${metrics['failedBuilds']} ?: '0'">0</div>
         </div>

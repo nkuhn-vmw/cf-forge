@@ -7,10 +7,26 @@
     <h1>User Metrics</h1>
     <div class="metrics-grid">
         <div class="metric-card">
+            <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
             <div class="metric-label">Total Users</div>
             <div class="metric-value" th:text="${totalUsers} ?: '0'">0</div>
         </div>
         <div class="metric-card">
+            <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
             <div class="metric-label">Active (7d)</div>
             <div class="metric-value" th:text="${activeUsers} ?: '0'">0</div>
         </div>
@@ -24,7 +40,7 @@
                 <td th:text="${user[1]}">0</td>
             </tr>
             <tr th:if="${#lists.isEmpty(topUsers)}">
-                <td colspan="2" style="text-align:center; color: var(--text-3);">No user activity recorded</td>
+                <td colspan="2" class="empty-row">No user activity recorded</td>
             </tr>
         </tbody>
     </table>
