@@ -58,82 +58,34 @@ export function ChatPanel({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        backgroundColor: 'var(--bg-secondary)',
-        borderLeft: '1px solid var(--border)',
-      }}
-    >
-      <div
-        style={{
-          padding: '8px 12px',
-          fontSize: '11px',
-          fontWeight: 600,
-          color: 'var(--text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}
-      >
+    <div className="chat-panel">
+      <div className="panel-header">
         <Bot size={14} /> AI Assistant
       </div>
 
-      <div ref={scrollRef} style={{ flex: 1, overflow: 'auto', padding: '12px' }}>
+      <div ref={scrollRef} className="chat-messages">
         {messages.length === 0 && (
-          <div style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center', padding: '20px' }}>
+          <div className="empty-state-sm text-sm">
             Ask the AI to help build, debug, or deploy your application.
           </div>
         )}
         {messages.map((msg, i) => (
-          <div
-            key={i}
-            style={{
-              marginBottom: '12px',
-              display: 'flex',
-              gap: '8px',
-              alignItems: 'flex-start',
-            }}
-          >
-            <div
-              style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: msg.role === 'user' ? 'var(--accent)' : 'var(--success)',
-                flexShrink: 0,
-              }}
-            >
+          <div key={i} className="chat-message">
+            <div className={msg.role === 'user' ? 'chat-avatar chat-avatar-user' : 'chat-avatar chat-avatar-bot'}>
               {msg.role === 'user' ? <User size={14} color="white" /> : <Bot size={14} color="white" />}
             </div>
-            <div
-              style={{
-                fontSize: '13px',
-                lineHeight: '1.6',
-                color: 'var(--text-primary)',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-              }}
-            >
+            <div className="chat-bubble">
               {msg.content}
               {streaming && i === messages.length - 1 && msg.role === 'assistant' && (
-                <span style={{ animation: 'blink 1s infinite', color: 'var(--accent)' }}>|</span>
+                <span className="chat-cursor">|</span>
               )}
             </div>
           </div>
         ))}
       </div>
 
-      <div style={{ padding: '8px', borderTop: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', gap: '8px' }}>
+      <div className="chat-input-bar">
+        <div className="row">
           <input
             type="text"
             value={input}
@@ -141,30 +93,12 @@ export function ChatPanel({ projectId }: { projectId: string }) {
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder="Ask the AI assistant..."
             disabled={streaming}
-            style={{
-              flex: 1,
-              padding: '8px 12px',
-              backgroundColor: 'var(--bg-primary)',
-              border: '1px solid var(--border)',
-              borderRadius: '6px',
-              color: 'var(--text-primary)',
-              fontSize: '13px',
-              outline: 'none',
-            }}
+            className="form-input flex-1"
           />
           <button
             onClick={handleSend}
             disabled={streaming || !input.trim()}
-            style={{
-              padding: '8px 12px',
-              backgroundColor: 'var(--accent)',
-              border: 'none',
-              borderRadius: '6px',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              opacity: streaming || !input.trim() ? 0.5 : 1,
-            }}
+            className={`btn-primary${streaming || !input.trim() ? ' btn-disabled' : ''}`}
           >
             <Send size={14} />
           </button>
