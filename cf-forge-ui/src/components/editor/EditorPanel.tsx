@@ -3,9 +3,9 @@ import { MonacoEditor } from './MonacoEditor.tsx'
 
 export function EditorPanel() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="col-layout">
       <EditorTabs />
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div className="flex-1 overflow-hidden">
         <MonacoEditor />
       </div>
     </div>
