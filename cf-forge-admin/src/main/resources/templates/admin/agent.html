@@ -1,27 +1,32 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{admin/layout :: layout(~{::title}, ~{::content})}">
-<title>AI Agent - CF Forge Admin</title>
-<div th:fragment="content" id="content">
-    <h2>AI Agent Metrics</h2>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout}">
+<head><title>AI Agent - CF Forge Admin</title></head>
+<body>
+<div layout:fragment="content">
+    <h1>AI Agent Metrics</h1>
     <div class="metrics-grid">
         <div class="metric-card">
-            <div class="metric-value" th:text="${metrics.totalPrompts}">0</div>
             <div class="metric-label">Total Prompts</div>
+            <div class="metric-value" th:text="${metrics['totalPrompts']} ?: '0'">0</div>
         </div>
         <div class="metric-card">
-            <div class="metric-value" th:text="${metrics.refineRequests}">0</div>
             <div class="metric-label">Refine Requests</div>
+            <div class="metric-value" th:text="${metrics['refineRequests']} ?: '0'">0</div>
         </div>
         <div class="metric-card">
-            <div class="metric-value" th:text="${metrics.avgResponseTimeMs + 'ms'}">0ms</div>
             <div class="metric-label">Avg Response Time</div>
+            <div class="metric-value" th:text="${metrics['avgResponseTimeMs'] + 'ms'} ?: '0ms'">0ms</div>
         </div>
         <div class="metric-card">
-            <div class="metric-value" th:text="${metrics.totalRequests}">0</div>
             <div class="metric-label">Total Requests</div>
+            <div class="metric-value" th:text="${metrics['totalRequests']} ?: '0'">0</div>
         </div>
     </div>
-    <h3>Prompts Over Time</h3>
-    <canvas id="promptsChart" width="400" height="200"></canvas>
+    <div class="chart-card">
+        <h3>Prompts Over Time</h3>
+        <canvas id="promptsChart" width="400" height="200"></canvas>
+    </div>
 </div>
+</body>
 </html>

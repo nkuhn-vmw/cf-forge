@@ -21,22 +21,23 @@ public class AgentMetricsService {
     public Map<String, Object> getAgentMetrics(LocalDateTime from, LocalDateTime to) {
         Instant start = from.toInstant(ZoneOffset.UTC);
         Instant end = to.toInstant(ZoneOffset.UTC);
-        var generateMetrics = metricSnapshotRepository.aggregateByMetric(MetricGranularity.HOURLY, start, end);
-        var refineMetrics = metricSnapshotRepository.aggregateByMetric(MetricGranularity.HOURLY, start, end);
+        var aggregated = metricSnapshotRepository.aggregateByMetric(MetricGranularity.HOURLY, start, end);
 
         long totalPrompts = 0;
         double avgDuration = 0;
-
-        if (!generateMetrics.isEmpty()) {
-            Object[] row = generateMetrics.get(0);
-            totalPrompts = ((Number) row[0]).longValue();
-            avgDuration = ((Number) row[1]).doubleValue();
-        }
-
         long refineCount = 0;
-        if (!refineMetrics.isEmpty()) {
-            Object[] row = refineMetrics.get(0);
-            refineCount = ((Number) row[0]).longValue();
+
+        for (Object[] row : aggregated) {
+            String metricName = (String) row[0];
+            long count = ((Number) row[1]).longValue();
+            double avg = ((Number) row[2]).doubleValue();
+
+            if ("agent.generate".equals(metricName)) {
+                totalPrompts = count;
+                avgDuration = avg;
+            } else if ("agent.refine".equals(metricName)) {
+                refineCount = count;
+            }
         }
 
         return Map.of(

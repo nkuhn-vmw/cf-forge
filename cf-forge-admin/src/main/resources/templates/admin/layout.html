@@ -9,7 +9,10 @@
 </head>
 <body>
     <nav class="sidebar">
-        <div class="logo"><h2>CF Forge Admin</h2></div>
+        <div class="logo">
+            <h2>CF Forge Admin</h2>
+            <span class="badge">Online</span>
+        </div>
         <ul>
             <li><a th:href="@{/admin/}" th:classappend="${#strings.equals(currentPage, 'overview')} ? 'active'">Overview</a></li>
             <li><a th:href="@{/admin/users}" th:classappend="${#strings.equals(currentPage, 'users')} ? 'active'">Users</a></li>
