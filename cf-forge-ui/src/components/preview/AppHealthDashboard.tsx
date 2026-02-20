@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Activity, Cpu, HardDrive, Server, RefreshCcw } from 'lucide-react'
+import '../../ui.css'
 
 interface AppHealth {
   state: string
@@ -47,37 +48,37 @@ export function AppHealthDashboard({ projectId }: { projectId: string }) {
   useEffect(() => { fetchHealth() }, [projectId])
 
   return (
-    <div style={{ padding: '12px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+    <div className="content-container-sm">
+      <div className="row mb-16">
         <Activity size={16} color="var(--accent)" />
-        <h3 style={{ fontSize: '14px', fontWeight: 600 }}>Application Health</h3>
-        <button onClick={fetchHealth} style={{ marginLeft: 'auto', padding: '2px 6px', background: 'none', border: 'none', color: 'var(--text-muted)', display: 'flex' }}>
+        <h3 className="text-md font-semibold">Application Health</h3>
+        <button onClick={fetchHealth} className="btn-icon ml-auto">
           <RefreshCcw size={13} />
         </button>
       </div>
 
       {loading ? (
-        <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Loading...</div>
+        <div className="text-muted text-base">Loading...</div>
       ) : !health ? (
-        <div style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '20px' }}>
+        <div className="empty-state-sm">
           Deploy your app to see health metrics
         </div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
-            <div style={{ padding: '10px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', textAlign: 'center' }}>
-              <Server size={16} color="var(--accent)" style={{ marginBottom: '4px' }} />
-              <div style={{ fontSize: '18px', fontWeight: 600 }}>{health.instances}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Instances</div>
+          <div className="grid-3 mb-16">
+            <div className="metric-card">
+              <Server size={16} color="var(--accent)" className="mb-4" />
+              <div className="metric-card-value">{health.instances}</div>
+              <div className="metric-card-label">Instances</div>
             </div>
-            <div style={{ padding: '10px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', textAlign: 'center' }}>
-              <HardDrive size={16} color="var(--accent)" style={{ marginBottom: '4px' }} />
-              <div style={{ fontSize: '18px', fontWeight: 600 }}>{health.memoryQuota}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Memory</div>
+            <div className="metric-card">
+              <HardDrive size={16} color="var(--accent)" className="mb-4" />
+              <div className="metric-card-value">{health.memoryQuota}</div>
+              <div className="metric-card-label">Memory</div>
             </div>
-            <div style={{ padding: '10px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', textAlign: 'center' }}>
-              <div style={{ fontSize: '16px', fontWeight: 600, color: health.state === 'STARTED' ? 'var(--success)' : 'var(--danger)', marginBottom: '4px' }}>{health.state}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>State</div>
+            <div className="metric-card">
+              <div className={`text-xl font-semibold mb-4 ${health.state === 'STARTED' ? 'status-running' : 'status-stopped'}`}>{health.state}</div>
+              <div className="metric-card-label">State</div>
             </div>
           </div>
 
@@ -85,35 +86,35 @@ export function AppHealthDashboard({ projectId }: { projectId: string }) {
             const memPercent = inst.memoryQuotaBytes > 0 ? (inst.memoryBytes / inst.memoryQuotaBytes * 100) : 0
             const diskPercent = inst.diskQuotaBytes > 0 ? (inst.diskBytes / inst.diskQuotaBytes * 100) : 0
             return (
-              <div key={inst.index} style={{ marginBottom: '8px', padding: '10px', border: '1px solid var(--border)', borderRadius: '6px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '12px' }}>
-                  <span style={{ fontWeight: 600 }}>Instance #{inst.index}</span>
-                  <span style={{ color: inst.state === 'RUNNING' ? 'var(--success)' : 'var(--danger)' }}>{inst.state}</span>
-                  <span style={{ color: 'var(--text-muted)' }}>up {formatUptime(inst.uptime)}</span>
+              <div key={inst.index} className="instance-card">
+                <div className="instance-header">
+                  <span className="font-semibold">Instance #{inst.index}</span>
+                  <span className={inst.state === 'RUNNING' ? 'status-running' : 'status-stopped'}>{inst.state}</span>
+                  <span className="text-muted">up {formatUptime(inst.uptime)}</span>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', fontSize: '11px' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '2px' }}>
+                <div className="instance-metrics">
+                  <div className="flex-1">
+                    <div className="row-between text-muted mb-4">
                       <span><Cpu size={10} /> CPU</span><span>{inst.cpuPercent.toFixed(1)}%</span>
                     </div>
-                    <div style={{ height: '4px', backgroundColor: 'var(--bg-hover)', borderRadius: '2px' }}>
-                      <div style={{ height: '100%', width: `${Math.min(inst.cpuPercent, 100)}%`, backgroundColor: 'var(--accent)', borderRadius: '2px' }} />
+                    <div className="progress-track">
+                      <div className="progress-fill progress-accent" style={{ width: `${Math.min(inst.cpuPercent, 100)}%` }} />
                     </div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '2px' }}>
+                  <div className="flex-1">
+                    <div className="row-between text-muted mb-4">
                       <span>MEM</span><span>{formatBytes(inst.memoryBytes)}</span>
                     </div>
-                    <div style={{ height: '4px', backgroundColor: 'var(--bg-hover)', borderRadius: '2px' }}>
-                      <div style={{ height: '100%', width: `${Math.min(memPercent, 100)}%`, backgroundColor: memPercent > 80 ? 'var(--warning)' : 'var(--success)', borderRadius: '2px' }} />
+                    <div className="progress-track">
+                      <div className={`progress-fill ${memPercent > 80 ? 'progress-warning' : 'progress-success'}`} style={{ width: `${Math.min(memPercent, 100)}%` }} />
                     </div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '2px' }}>
+                  <div className="flex-1">
+                    <div className="row-between text-muted mb-4">
                       <span>DISK</span><span>{formatBytes(inst.diskBytes)}</span>
                     </div>
-                    <div style={{ height: '4px', backgroundColor: 'var(--bg-hover)', borderRadius: '2px' }}>
-                      <div style={{ height: '100%', width: `${Math.min(diskPercent, 100)}%`, backgroundColor: diskPercent > 80 ? 'var(--warning)' : 'var(--success)', borderRadius: '2px' }} />
+                    <div className="progress-track">
+                      <div className={`progress-fill ${diskPercent > 80 ? 'progress-warning' : 'progress-success'}`} style={{ width: `${Math.min(diskPercent, 100)}%` }} />
                     </div>
                   </div>
                 </div>

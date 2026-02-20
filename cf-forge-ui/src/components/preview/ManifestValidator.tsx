@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { CheckCircle, AlertCircle, XCircle, FileCode } from 'lucide-react'
+import '../../ui.css'
 
 interface ValidationResult {
   valid: boolean
@@ -70,96 +71,41 @@ applications:
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '700px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+    <div className="content-container-sm">
+      <div className="row mb-16">
         <FileCode size={18} color="var(--accent)" />
-        <h3 style={{ fontSize: '15px', fontWeight: 600 }}>Manifest Validator</h3>
+        <h3 className="text-lg font-semibold">Manifest Validator</h3>
       </div>
 
       <textarea
         value={manifest}
         onChange={(e) => setManifest(e.target.value)}
-        style={{
-          width: '100%',
-          height: '250px',
-          padding: '12px',
-          backgroundColor: 'var(--bg-primary)',
-          border: '1px solid var(--border)',
-          borderRadius: '6px',
-          color: 'var(--text-primary)',
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: '13px',
-          resize: 'vertical',
-          outline: 'none',
-        }}
+        className="form-textarea"
+        style={{ width: '100%', height: '250px' }}
       />
 
       <button
         onClick={handleValidate}
-        style={{
-          marginTop: '12px',
-          padding: '8px 20px',
-          backgroundColor: 'var(--accent)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          fontSize: '13px',
-          fontWeight: 500,
-        }}
+        className="btn-primary"
+        style={{ marginTop: '12px' }}
       >
         Validate
       </button>
 
       {result && (
-        <div style={{ marginTop: '16px' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '12px',
-              fontSize: '14px',
-              fontWeight: 600,
-              color: result.valid ? 'var(--success)' : 'var(--danger)',
-            }}
-          >
+        <div className="validation-result">
+          <div className={`validation-status ${result.valid ? 'validation-status-valid' : 'validation-status-invalid'}`}>
             {result.valid ? <CheckCircle size={18} /> : <XCircle size={18} />}
             {result.valid ? 'Manifest is valid' : 'Manifest has errors'}
           </div>
 
           {result.errors.map((err, i) => (
-            <div
-              key={`e${i}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 12px',
-                marginBottom: '6px',
-                backgroundColor: 'rgba(248, 81, 73, 0.1)',
-                borderRadius: '4px',
-                fontSize: '13px',
-                color: 'var(--danger)',
-              }}
-            >
+            <div key={`e${i}`} className="validation-msg validation-error">
               <XCircle size={14} /> {err}
             </div>
           ))}
           {result.warnings.map((warn, i) => (
-            <div
-              key={`w${i}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 12px',
-                marginBottom: '6px',
-                backgroundColor: 'rgba(210, 153, 34, 0.1)',
-                borderRadius: '4px',
-                fontSize: '13px',
-                color: 'var(--warning)',
-              }}
-            >
+            <div key={`w${i}`} className="validation-msg validation-warning">
               <AlertCircle size={14} /> {warn}
             </div>
           ))}
