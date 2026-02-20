@@ -1,29 +1,41 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{admin/layout :: layout(~{::title}, ~{::content})}">
-<title>Deployments - CF Forge Admin</title>
-<div th:fragment="content" id="content">
-    <h2>Deployment Metrics</h2>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout}">
+<head><title>Deployments - CF Forge Admin</title></head>
+<body>
+<div layout:fragment="content">
+    <h1>Deployment Metrics</h1>
     <div class="metrics-grid">
         <div class="metric-card">
-            <div class="metric-value" th:text="${metrics.totalDeploys}">0</div>
             <div class="metric-label">Total Deployments</div>
+            <div class="metric-value" th:text="${metrics['totalDeploys']} ?: '0'">0</div>
         </div>
         <div class="metric-card">
-            <div class="metric-value" th:text="${metrics.successRate + '%'}">0%</div>
             <div class="metric-label">Success Rate</div>
+            <div class="metric-value" th:text="${metrics['successRate'] + '%'} ?: '0%'">0%</div>
         </div>
         <div class="metric-card">
-            <div class="metric-value" th:text="${metrics.rollbacks}">0</div>
             <div class="metric-label">Rollbacks</div>
+            <div class="metric-value" th:text="${metrics['rollbacks']} ?: '0'">0</div>
         </div>
         <div class="metric-card">
-            <div class="metric-value" th:text="${metrics.failedDeploys}">0</div>
             <div class="metric-label">Failed</div>
+            <div class="metric-value" th:text="${metrics['failedDeploys']} ?: '0'">0</div>
         </div>
     </div>
-    <h3>By Strategy</h3>
-    <canvas id="strategyChart" width="400" height="200"></canvas>
-    <h3>By Environment</h3>
-    <canvas id="envChart" width="400" height="200"></canvas>
+    <div class="chart-card">
+        <h3>By Strategy</h3>
+        <canvas id="strategyChart" width="400" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+        <h3>By Environment</h3>
+        <canvas id="envChart" width="400" height="200"></canvas>
+    </div>
+
+    <script th:inline="javascript">
+        var deployByStrategy = /*[[${metrics['byStrategy']}]]*/ {};
+        var deployByEnvironment = /*[[${metrics['byEnvironment']}]]*/ {};
+    </script>
 </div>
+</body>
 </html>

@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{admin/layout :: layout(~{::title}, ~{::content})}">
-<title>Health - CF Forge Admin</title>
-<div th:fragment="content" id="content">
-    <h2>Component Health</h2>
-    <table class="data-table">
-        <thead><tr><th>Component</th><th>Status</th><th>Last Checked</th></tr></thead>
-        <tbody>
-            <tr th:each="health : ${healthData}">
-                <td th:text="${health[0]}">component</td>
-                <td>
-                    <span th:class="${health[1] == 'UP' ? 'status-up' : 'status-down'}"
-                          th:text="${health[1]}">UP</span>
-                </td>
-                <td th:text="${health[2]}">timestamp</td>
-            </tr>
-        </tbody>
-    </table>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout}">
+<head><title>Health - CF Forge Admin</title></head>
+<body>
+<div layout:fragment="content">
+    <h1>Component Health</h1>
+    <div class="health-grid">
+        <div th:each="health : ${healthData}" class="health-card">
+            <span class="component-name" th:text="${health[0]}">component</span>
+            <span th:class="'health-status status-' + ${health[1]}"
+                  th:text="${health[1]}">UP</span>
+        </div>
+        <div th:if="${#lists.isEmpty(healthData)}" class="health-card">
+            <span class="component-name" style="color: var(--text-3);">No health data available</span>
+        </div>
+    </div>
 </div>
+</body>
 </html>

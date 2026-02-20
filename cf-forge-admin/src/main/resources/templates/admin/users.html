@@ -1,19 +1,21 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{admin/layout :: layout(~{::title}, ~{::content})}">
-<title>Users - CF Forge Admin</title>
-<div th:fragment="content" id="content">
-    <h2>User Metrics</h2>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout}">
+<head><title>Users - CF Forge Admin</title></head>
+<body>
+<div layout:fragment="content">
+    <h1>User Metrics</h1>
     <div class="metrics-grid">
         <div class="metric-card">
-            <div class="metric-value" th:text="${totalUsers}">0</div>
             <div class="metric-label">Total Users</div>
+            <div class="metric-value" th:text="${totalUsers} ?: '0'">0</div>
         </div>
         <div class="metric-card">
-            <div class="metric-value" th:text="${activeUsers}">0</div>
             <div class="metric-label">Active (7d)</div>
+            <div class="metric-value" th:text="${activeUsers} ?: '0'">0</div>
         </div>
     </div>
-    <h3>Top Active Users</h3>
+    <h2>Top Active Users</h2>
     <table class="data-table">
         <thead><tr><th>User</th><th>Activity Count</th></tr></thead>
         <tbody>
@@ -21,7 +23,11 @@
                 <td th:text="${user[0]}">user@example.com</td>
                 <td th:text="${user[1]}">0</td>
             </tr>
+            <tr th:if="${#lists.isEmpty(topUsers)}">
+                <td colspan="2" style="text-align:center; color: var(--text-3);">No user activity recorded</td>
+            </tr>
         </tbody>
     </table>
 </div>
+</body>
 </html>
