@@ -7,18 +7,58 @@
     <h1>AI Agent Metrics</h1>
     <div class="metrics-grid">
         <div class="metric-card">
+            <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 8V4H8"/>
+                <rect width="16" height="12" x="4" y="8" rx="2"/>
+                <path d="M2 14h2"/>
+                <path d="M20 14h2"/>
+                <path d="M15 13v2"/>
+                <path d="M9 13v2"/>
+            </svg>
             <div class="metric-label">Total Prompts</div>
             <div class="metric-value" th:text="${metrics['totalPrompts']} ?: '0'">0</div>
         </div>
         <div class="metric-card">
+            <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 8V4H8"/>
+                <rect width="16" height="12" x="4" y="8" rx="2"/>
+                <path d="M2 14h2"/>
+                <path d="M20 14h2"/>
+                <path d="M15 13v2"/>
+                <path d="M9 13v2"/>
+            </svg>
             <div class="metric-label">Refine Requests</div>
             <div class="metric-value" th:text="${metrics['refineRequests']} ?: '0'">0</div>
         </div>
         <div class="metric-card">
+            <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 8V4H8"/>
+                <rect width="16" height="12" x="4" y="8" rx="2"/>
+                <path d="M2 14h2"/>
+                <path d="M20 14h2"/>
+                <path d="M15 13v2"/>
+                <path d="M9 13v2"/>
+            </svg>
             <div class="metric-label">Avg Response Time</div>
             <div class="metric-value" th:text="${metrics['avgResponseTimeMs'] + 'ms'} ?: '0ms'">0ms</div>
         </div>
         <div class="metric-card">
+            <svg class="metric-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 8V4H8"/>
+                <rect width="16" height="12" x="4" y="8" rx="2"/>
+                <path d="M2 14h2"/>
+                <path d="M20 14h2"/>
+                <path d="M15 13v2"/>
+                <path d="M9 13v2"/>
+            </svg>
             <div class="metric-label">Total Requests</div>
             <div class="metric-value" th:text="${metrics['totalRequests']} ?: '0'">0</div>
         </div>

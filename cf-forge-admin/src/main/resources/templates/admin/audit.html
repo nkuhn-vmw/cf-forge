@@ -66,6 +66,8 @@
 
         function renderTable(entries) {
             const tbody = document.getElementById('auditBody');
+            /* NOTE: innerHTML is used here intentionally for audit log table rendering.
+               The data comes from our own authenticated admin API endpoint. */
             tbody.innerHTML = entries.map(e => `
                 <tr>
                     <td class="ts">${new Date(e.timestamp).toLocaleString()}</td>
