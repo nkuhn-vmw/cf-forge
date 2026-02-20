@@ -30,23 +30,20 @@ export function CreateProjectDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      style={{
-        position: 'fixed', inset: 0, display: 'flex', alignItems: 'center',
-        justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 100,
-      }}
+      className="dialog-overlay"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border)', width: '420px', maxHeight: '90vh', overflow: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 600 }}>New Project</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', display: 'flex' }}>
+      <div className="dialog">
+        <div className="dialog-header">
+          <h2 style={{ fontSize: '16px' }} className="font-semibold">New Project</h2>
+          <button onClick={onClose} className="btn-icon">
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding: '20px' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+        <form onSubmit={handleSubmit} className="dialog-body">
+          <div className="form-group">
+            <label className="form-label">
               Project Name
             </label>
             <input
@@ -55,16 +52,12 @@ export function CreateProjectDialog({ onClose }: { onClose: () => void }) {
               onChange={(e) => setName(e.target.value)}
               placeholder="my-cf-app"
               autoFocus
-              style={{
-                width: '100%', padding: '8px 12px', backgroundColor: 'var(--bg-primary)',
-                border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)',
-                fontSize: '13px', outline: 'none',
-              }}
+              className="form-input-full"
             />
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+          <div className="form-group">
+            <label className="form-label">
               Language
             </label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -73,11 +66,7 @@ export function CreateProjectDialog({ onClose }: { onClose: () => void }) {
                   key={lang}
                   type="button"
                   onClick={() => { setLanguage(lang); setFramework('') }}
-                  style={{
-                    padding: '6px 12px', border: '1px solid var(--border)', borderRadius: '6px',
-                    fontSize: '12px', backgroundColor: language === lang ? 'var(--accent)' : 'var(--bg-tertiary)',
-                    color: language === lang ? 'white' : 'var(--text-secondary)',
-                  }}
+                  className={`chip-toggle ${language === lang ? 'active' : ''}`}
                 >
                   {lang}
                 </button>
@@ -85,18 +74,14 @@ export function CreateProjectDialog({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+          <div className="mb-24">
+            <label className="form-label">
               Framework
             </label>
             <select
               value={framework}
               onChange={(e) => setFramework(e.target.value)}
-              style={{
-                width: '100%', padding: '8px 12px', backgroundColor: 'var(--bg-primary)',
-                border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)',
-                fontSize: '13px', outline: 'none',
-              }}
+              className="form-input-full"
             >
               <option value="">Select a framework...</option>
               {(FRAMEWORKS[language] ?? []).map((fw) => (
@@ -108,11 +93,8 @@ export function CreateProjectDialog({ onClose }: { onClose: () => void }) {
           <button
             type="submit"
             disabled={!name.trim() || createProject.isPending}
-            style={{
-              width: '100%', padding: '10px', backgroundColor: 'var(--accent)', color: 'white',
-              border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: 500,
-              opacity: !name.trim() || createProject.isPending ? 0.5 : 1,
-            }}
+            className={`btn-primary ${!name.trim() || createProject.isPending ? 'btn-disabled' : ''}`}
+            style={{ width: '100%', justifyContent: 'center' }}
           >
             {createProject.isPending ? 'Creating...' : 'Create Project'}
           </button>
