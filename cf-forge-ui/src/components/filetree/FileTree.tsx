@@ -33,19 +33,8 @@ function FileTreeNode({ entry, projectId, depth }: { entry: FileEntry; projectId
     <div>
       <div
         onClick={handleClick}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          padding: '3px 8px',
-          paddingLeft: `${depth * 16 + 8}px`,
-          cursor: 'pointer',
-          color: 'var(--text-secondary)',
-          fontSize: '13px',
-          userSelect: 'none',
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+        className="file-tree-node"
+        style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
         {entry.directory ? (
           <>
@@ -54,11 +43,11 @@ function FileTreeNode({ entry, projectId, depth }: { entry: FileEntry; projectId
           </>
         ) : (
           <>
-            <span style={{ width: '14px' }} />
+            <span className="file-tree-spacer" />
             <File size={14} color="var(--accent)" />
           </>
         )}
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span className="file-tree-name">
           {entry.name}
         </span>
       </div>
@@ -82,29 +71,12 @@ export function FileTree({ projectId }: { projectId: string }) {
   const { data: files, isLoading } = useFiles(projectId)
 
   return (
-    <div
-      style={{
-        height: '100%',
-        overflow: 'auto',
-        backgroundColor: 'var(--bg-secondary)',
-        borderRight: '1px solid var(--border)',
-      }}
-    >
-      <div
-        style={{
-          padding: '8px 12px',
-          fontSize: '11px',
-          fontWeight: 600,
-          color: 'var(--text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          borderBottom: '1px solid var(--border)',
-        }}
-      >
+    <div className="file-tree">
+      <div className="panel-header">
         Explorer
       </div>
       {isLoading ? (
-        <div style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '12px' }}>
+        <div className="empty-state-sm text-muted text-xs">
           Loading...
         </div>
       ) : (
