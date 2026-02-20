@@ -7,7 +7,8 @@ export function Login() {
   const { isAuthenticated } = useAuthStore()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/dashboard'
+  const rawRedirect = searchParams.get('redirect') || '/dashboard'
+  const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/dashboard'
 
   useEffect(() => {
     if (isAuthenticated) {

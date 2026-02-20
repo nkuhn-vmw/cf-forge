@@ -16,7 +16,7 @@
         </div>
         <div class="metric-card">
             <div class="metric-label">Avg Duration</div>
-            <div class="metric-value" th:text="${#numbers.formatDecimal(metrics['avgDurationMs'] / 1000.0, 1, 1) + 's'} ?: '0s'">0s</div>
+            <div class="metric-value" th:text="${metrics['avgDurationMs'] != null ? #numbers.formatDecimal(metrics['avgDurationMs'] / 1000.0, 1, 1) + 's' : '0s'}">0s</div>
         </div>
         <div class="metric-card">
             <div class="metric-label">Failed</div>

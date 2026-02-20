@@ -5,12 +5,13 @@ import com.cfforge.common.repository.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/admin")
@@ -44,11 +45,6 @@ public class AdminDashboardController {
         this.deploymentMetricsService = deploymentMetricsService;
         this.agentMetricsService = agentMetricsService;
         this.healthCheckScheduler = healthCheckScheduler;
-    }
-
-    @ModelAttribute("currentPage")
-    public String currentPage() {
-        return "";
     }
 
     @GetMapping({"", "/"})
@@ -122,16 +118,14 @@ public class AdminDashboardController {
         double avgLatency = snapshots.stream()
             .mapToDouble(s -> s.getAvgDurationMs())
             .average().orElse(0);
-        double p95Latency = snapshots.stream()
-            .mapToDouble(s -> s.getAvgDurationMs())
-            .sorted()
-            .skip((long)(snapshots.size() * 0.95))
-            .findFirst().orElse(0);
+        double maxP95Latency = snapshots.stream()
+            .mapToDouble(s -> s.getP95DurationMs())
+            .max().orElse(0);
 
-        var metrics = new java.util.LinkedHashMap<String, Object>();
+        Map<String, Object> metrics = new LinkedHashMap<>();
         metrics.put("requestVolume", totalRequests);
         metrics.put("avgLatencyMs", Math.round(avgLatency * 100.0) / 100.0);
-        metrics.put("p95LatencyMs", Math.round(p95Latency * 100.0) / 100.0);
+        metrics.put("p95LatencyMs", Math.round(maxP95Latency * 100.0) / 100.0);
         model.addAttribute("metrics", metrics);
         return "admin/genai";
     }
