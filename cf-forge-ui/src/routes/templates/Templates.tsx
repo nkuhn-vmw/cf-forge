@@ -1,17 +1,16 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, BookTemplate, Download, Code2 } from 'lucide-react'
-import { useTemplates, useCreateProject } from '../../api/queries.ts'
+import { useTemplates, useScaffoldTemplate } from '../../api/queries.ts'
 
 export function Templates() {
   const { data: templates, isLoading } = useTemplates()
-  const createProject = useCreateProject()
+  const scaffoldTemplate = useScaffoldTemplate()
   const navigate = useNavigate()
 
-  const handleUseTemplate = (template: { name: string; language: string; framework: string }) => {
-    createProject.mutate(
-      { name: `${template.name}-project`, language: template.language, framework: template.framework },
-      { onSuccess: (project) => navigate(`/workspace/${project.id}`) }
-    )
+  const handleUseTemplate = (template: { slug: string }) => {
+    scaffoldTemplate.mutate(template.slug, {
+      onSuccess: (project) => navigate(`/workspace/${project.id}`),
+    })
   }
 
   return (
@@ -56,7 +55,7 @@ export function Templates() {
                   </span>
                   <button
                     onClick={() => handleUseTemplate(template)}
-                    disabled={createProject.isPending}
+                    disabled={scaffoldTemplate.isPending}
                     className="btn-primary btn-sm"
                   >
                     Use Template

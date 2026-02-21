@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Plus, Code2, Rocket, Settings, Trash2, Store, BookTemplate, LogOut } from 'lucide-react'
+import { Plus, Code2, Rocket, Trash2, Store, BookTemplate, LogOut, FileCode } from 'lucide-react'
 import { useProjects, useDeleteProject } from '../../api/queries.ts'
 import { CreateProjectDialog } from './CreateProjectDialog.tsx'
 import { useAuthStore } from '../../store/auth.ts'
@@ -38,6 +38,9 @@ export function ProjectDashboard() {
           </Link>
           <Link to="/templates" className="nav-link">
             <BookTemplate size={14} /> Templates
+          </Link>
+          <Link to="/migration" className="nav-link">
+            <FileCode size={14} /> Migration
           </Link>
           <div className="row gap-8" style={{ marginLeft: '8px', paddingLeft: '16px', borderLeft: '1px solid var(--border)' }}>
             <span className="text-base text-secondary">{user?.userName || user?.email}</span>
@@ -85,8 +88,9 @@ export function ProjectDashboard() {
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate(`/workspace/${project.id}`) }}
                       className="btn-icon"
+                      title="Open workspace"
                     >
-                      <Settings size={14} />
+                      <Code2 size={14} />
                     </button>
                     <button
                       onClick={(e) => {
