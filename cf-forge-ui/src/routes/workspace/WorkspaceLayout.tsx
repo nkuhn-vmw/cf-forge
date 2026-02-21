@@ -16,6 +16,7 @@ import { LivePreview } from '../../components/preview/LivePreview.tsx'
 import { AppHealthDashboard } from '../../components/preview/AppHealthDashboard.tsx'
 import { VcapExplorer } from '../../components/preview/VcapExplorer.tsx'
 import { ManifestValidator } from '../../components/preview/ManifestValidator.tsx'
+import { notify } from '../../store/notifications.ts'
 
 type BottomTab = 'terminal' | 'preview' | 'health' | 'services' | 'manifest'
 type DeployEnv = 'STAGING' | 'PRODUCTION'
@@ -37,7 +38,10 @@ export function WorkspaceLayout() {
   if (!projectId) return null
 
   const handleDeploy = (env: DeployEnv) => {
-    triggerDeploy.mutate(env)
+    triggerDeploy.mutate(env, {
+      onSuccess: () => notify.success(`Deploy to ${env} started`),
+      onError: (err: any) => notify.error('Deploy failed: ' + (err?.message ?? err)),
+    })
     setDeployMenuOpen(false)
   }
 
@@ -81,7 +85,10 @@ export function WorkspaceLayout() {
         <div className="divider-v" />
 
         <button
-          onClick={() => triggerBuild.mutate()}
+          onClick={() => triggerBuild.mutate(undefined, {
+            onSuccess: () => notify.success('Build started'),
+            onError: (err: any) => notify.error('Build failed: ' + (err?.message ?? err)),
+          })}
           disabled={triggerBuild.isPending}
           className="btn-secondary"
         >
