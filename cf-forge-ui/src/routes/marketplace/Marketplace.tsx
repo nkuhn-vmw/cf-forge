@@ -38,6 +38,7 @@ export function Marketplace() {
   const [activeCategory, setActiveCategory] = useState<string>('All')
   const [provisioningName, setProvisioningName] = useState<string | null>(null)
   const [provisionedServices, setProvisionedServices] = useState<Set<string>>(new Set())
+  const [selectedPlans, setSelectedPlans] = useState<Record<string, string>>({})
 
   const filtered = services?.filter((svc) => {
     const matchesSearch = !searchTerm ||
@@ -155,15 +156,19 @@ export function Marketplace() {
                   {service.plans?.length > 0 && (
                     <div className="row gap-4 mb-12" style={{ flexWrap: 'wrap' }}>
                       {service.plans.map((plan) => (
-                        <span key={plan} className="badge">
+                        <button
+                          key={plan}
+                          onClick={() => setSelectedPlans((prev) => ({ ...prev, [service.name]: plan }))}
+                          className={`chip-toggle ${(selectedPlans[service.name] ?? service.plans[0]) === plan ? 'active' : ''}`}
+                        >
                           {plan}
-                        </span>
+                        </button>
                       ))}
                     </div>
                   )}
                   {projectId && service.plans?.length > 0 && (
                     <button
-                      onClick={() => handleProvision(service.name, service.plans[0])}
+                      onClick={() => handleProvision(service.name, selectedPlans[service.name] ?? service.plans[0])}
                       disabled={provisioningName === service.name || provisionedServices.has(service.name)}
                       className="btn-provision"
                     >
