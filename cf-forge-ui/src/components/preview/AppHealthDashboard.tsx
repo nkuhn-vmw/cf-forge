@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
 import { Activity, Cpu, HardDrive, Server, RefreshCcw } from 'lucide-react'
+import { useAppHealth } from '../../api/queries.ts'
 import '../../ui.css'
 
 interface AppHealth {
@@ -34,30 +34,23 @@ function formatUptime(seconds: number): string {
 }
 
 export function AppHealthDashboard({ projectId }: { projectId: string }) {
-  const [health, setHealth] = useState<AppHealth | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  const fetchHealth = () => {
-    setLoading(true)
-    fetch(`/api/v1/projects/${projectId}/health`)
-      .then((r) => r.json())
-      .then((data) => { setHealth(data); setLoading(false) })
-      .catch(() => { setHealth(null); setLoading(false) })
+  const { data: health, isLoading, refetch } = useAppHealth(projectId) as {
+    data: AppHealth | undefined
+    isLoading: boolean
+    refetch: () => void
   }
-
-  useEffect(() => { fetchHealth() }, [projectId])
 
   return (
     <div className="content-container-sm">
       <div className="row mb-16">
         <Activity size={16} color="var(--accent)" />
         <h3 className="text-md font-semibold">Application Health</h3>
-        <button onClick={fetchHealth} className="btn-icon ml-auto">
+        <button onClick={() => refetch()} className="btn-icon ml-auto">
           <RefreshCcw size={13} />
         </button>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="text-muted text-base">Loading...</div>
       ) : !health ? (
         <div className="empty-state-sm">

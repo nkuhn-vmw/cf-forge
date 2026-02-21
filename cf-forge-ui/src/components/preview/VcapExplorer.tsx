@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Database, ChevronRight, ChevronDown, Key } from 'lucide-react'
+import { useVcapServices } from '../../api/queries.ts'
 import '../../ui.css'
 
 interface VcapService {
@@ -11,22 +12,11 @@ interface VcapService {
 }
 
 export function VcapExplorer({ projectId }: { projectId: string }) {
-  const [services, setServices] = useState<VcapService[]>([])
+  const { data: services, isLoading } = useVcapServices(projectId) as {
+    data: VcapService[] | undefined
+    isLoading: boolean
+  }
   const [expanded, setExpanded] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch(`/api/v1/projects/${projectId}/vcap`)
-      .then((r) => r.json())
-      .then((data) => {
-        setServices(data)
-        setLoading(false)
-      })
-      .catch(() => {
-        setServices([])
-        setLoading(false)
-      })
-  }, [projectId])
 
   return (
     <div className="content-container-sm">
@@ -35,14 +25,14 @@ export function VcapExplorer({ projectId }: { projectId: string }) {
         <h3 className="text-md font-semibold">Service Bindings</h3>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="text-muted text-base">Loading...</div>
-      ) : services.length === 0 ? (
+      ) : (services ?? []).length === 0 ? (
         <div className="empty-state-sm">
           No service bindings found
         </div>
       ) : (
-        services.map((svc) => (
+        (services ?? []).map((svc) => (
           <div key={svc.name} className="vcap-service">
             <div
               onClick={() => setExpanded(expanded === svc.name ? null : svc.name)}

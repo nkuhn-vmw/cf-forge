@@ -119,3 +119,20 @@ export function useScaffoldTemplate() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   })
 }
+
+export function useAppHealth(projectId: string) {
+  return useQuery({
+    queryKey: ['health', projectId],
+    queryFn: () => api.health.get(projectId),
+    enabled: !!projectId,
+    refetchInterval: 30_000,
+  })
+}
+
+export function useVcapServices(projectId: string) {
+  return useQuery({
+    queryKey: ['vcap', projectId],
+    queryFn: () => api.vcap.get(projectId),
+    enabled: !!projectId,
+  })
+}

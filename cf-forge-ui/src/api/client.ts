@@ -375,6 +375,14 @@ export const api = {
         }),
   },
 
+  health: {
+    get: (projectId: string) => request<any>(`/projects/${projectId}/health`),
+  },
+
+  vcap: {
+    get: (projectId: string) => request<any[]>(`/projects/${projectId}/vcap`),
+  },
+
   bench: {
     evaluate: (code: string, prompt: string) =>
       request<{ overallScore: number; correctnessScore: number; securityScore: number }>(
