@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Plus, Code2, Rocket, Trash2, Store, BookTemplate, LogOut, FileCode } from 'lucide-react'
+import { Plus, Code2, Rocket, Trash2, Store, BookTemplate, LogOut, FileCode, AlertTriangle } from 'lucide-react'
 import { useProjects, useDeleteProject } from '../../api/queries.ts'
 import { CreateProjectDialog } from './CreateProjectDialog.tsx'
 import { useAuthStore } from '../../store/auth.ts'
+import { notify } from '../../store/notifications.ts'
 
 export function ProjectDashboard() {
   const [showCreate, setShowCreate] = useState(false)
-  const { data: projects, isLoading } = useProjects()
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+  const { data: projects, isLoading, isError } = useProjects()
   const deleteProject = useDeleteProject()
   const navigate = useNavigate()
   const { user, logout } = useAuthStore()
@@ -20,6 +22,20 @@ export function ProjectDashboard() {
     DOTNET: '#178600',
     RUBY: '#701516',
     STATICFILE: '#e34c26',
+  }
+
+  const handleDelete = () => {
+    if (!deleteTarget) return
+    deleteProject.mutate(deleteTarget.id, {
+      onSuccess: () => {
+        notify.success(`Deleted "${deleteTarget.name}"`)
+        setDeleteTarget(null)
+      },
+      onError: (err: any) => {
+        notify.error('Delete failed: ' + (err?.message ?? err))
+        setDeleteTarget(null)
+      },
+    })
   }
 
   return (
@@ -66,7 +82,13 @@ export function ProjectDashboard() {
           </button>
         </div>
 
-        {isLoading ? (
+        {isError ? (
+          <div className="empty-state">
+            <AlertTriangle size={48} className="empty-state-icon" />
+            <p className="empty-state-title">Failed to load projects</p>
+            <p className="empty-state-text">Check your connection and try refreshing the page</p>
+          </div>
+        ) : isLoading ? (
           <div className="empty-state">Loading projects...</div>
         ) : !projects?.length ? (
           <div className="empty-state">
@@ -95,8 +117,9 @@ export function ProjectDashboard() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (confirm('Delete this project?')) deleteProject.mutate(project.id)
+                        setDeleteTarget({ id: project.id, name: project.name })
                       }}
+                      disabled={deleteProject.isPending}
                       className="btn-icon"
                     >
                       <Trash2 size={14} />
@@ -121,6 +144,29 @@ export function ProjectDashboard() {
       </div>
 
       {showCreate && <CreateProjectDialog onClose={() => setShowCreate(false)} />}
+
+      {deleteTarget && (
+        <div className="dialog-overlay" onClick={() => setDeleteTarget(null)}>
+          <div className="dialog" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-8">Delete Project</h3>
+            <p className="text-secondary mb-16">
+              Are you sure you want to delete &ldquo;{deleteTarget.name}&rdquo;? This action cannot be undone.
+            </p>
+            <div className="row gap-8" style={{ justifyContent: 'flex-end' }}>
+              <button onClick={() => setDeleteTarget(null)} className="btn-secondary">
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteProject.isPending}
+                className="btn-danger"
+              >
+                {deleteProject.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
