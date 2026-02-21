@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { FileCode, Loader2, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { FileCode, Loader2, CheckCircle, AlertTriangle, ArrowLeft } from 'lucide-react'
+import { api } from '../../api/client.ts'
 
 interface MigrationPlan {
   sourceStack: string
@@ -23,14 +25,8 @@ export function MigrationAssistant() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/v1/migration/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, description, sourceStack }),
-      })
-      if (!res.ok) throw new Error('Analysis failed')
-      const result = await res.json()
-      setPlan(result)
+      const result = await api.migration.analyze({ code, description, sourceStack })
+      setPlan(result as MigrationPlan)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {
@@ -49,8 +45,16 @@ export function MigrationAssistant() {
   }
 
   return (
-    <div className="content-container-lg">
-      <h1 className="text-5xl mb-8">AI Migration Assistant</h1>
+    <div className="page">
+      <header className="page-header">
+        <Link to="/dashboard" className="btn-icon">
+          <ArrowLeft size={18} />
+        </Link>
+        <FileCode size={20} color="var(--accent)" />
+        <h1 className="page-header-title">AI Migration Assistant</h1>
+      </header>
+
+      <div className="content-container">
       <p className="text-secondary mb-24">
         Analyze legacy applications and generate migration plans to Cloud Foundry + Spring Boot
       </p>
@@ -189,6 +193,7 @@ export function MigrationAssistant() {
           )}
         </div>
       )}
+      </div>
     </div>
   )
 }
