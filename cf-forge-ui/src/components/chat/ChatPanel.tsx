@@ -12,6 +12,10 @@ export function ChatPanel({ projectId }: { projectId: string }) {
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
+  const conversationIdRef = useRef(crypto.randomUUID())
+
+  useEffect(() => () => { abortRef.current?.abort() }, [])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -27,11 +31,15 @@ export function ChatPanel({ projectId }: { projectId: string }) {
     setInput('')
     setStreaming(true)
 
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     let assistantMsg = ''
     setMessages((prev) => [...prev, { role: 'assistant', content: '' }])
 
     api.agent.generate(
-      { conversationId: projectId, projectId, message: prompt },
+      { conversationId: conversationIdRef.current, projectId, message: prompt },
       {
         onChunk: (data) => {
           assistantMsg += data
@@ -44,19 +52,20 @@ export function ChatPanel({ projectId }: { projectId: string }) {
         onDone: () => {
           setStreaming(false)
         },
-        onError: () => {
+        onError: (err) => {
           setStreaming(false)
           if (!assistantMsg) {
             setMessages((prev) => {
               const updated = [...prev]
               updated[updated.length - 1] = {
                 role: 'assistant',
-                content: 'Connection error. Please try again.',
+                content: err.message || 'Connection error. Please try again.',
               }
               return updated
             })
           }
         },
+        signal: controller.signal,
       },
     )
   }

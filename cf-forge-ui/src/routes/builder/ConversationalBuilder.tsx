@@ -24,6 +24,10 @@ export function ConversationalBuilder() {
   const [streaming, setStreaming] = useState(false)
   const [generatedProject, setGeneratedProject] = useState<{ name: string; language: string; framework: string } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
+  const conversationIdRef = useRef(crypto.randomUUID())
+
+  useEffect(() => () => { abortRef.current?.abort() }, [])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -39,11 +43,15 @@ export function ConversationalBuilder() {
     setInput('')
     setStreaming(true)
 
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     let response = ''
     setMessages((prev) => [...prev, { role: 'assistant', content: '' }])
 
     api.agent.generate(
-      { conversationId: 'builder', message: prompt },
+      { conversationId: conversationIdRef.current, message: prompt },
       {
         onChunk: (data) => {
           response += data
@@ -74,16 +82,17 @@ export function ConversationalBuilder() {
             }
           }
         },
-        onError: () => {
+        onError: (err) => {
           setStreaming(false)
           if (!response) {
             setMessages((prev) => {
               const updated = [...prev]
-              updated[updated.length - 1] = { role: 'assistant', content: 'Connection error. Please try again.' }
+              updated[updated.length - 1] = { role: 'assistant', content: err.message || 'Connection error. Please try again.' }
               return updated
             })
           }
         },
+        signal: controller.signal,
       },
     )
   }
