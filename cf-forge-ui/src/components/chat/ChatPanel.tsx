@@ -27,34 +27,38 @@ export function ChatPanel({ projectId }: { projectId: string }) {
     setInput('')
     setStreaming(true)
 
-    const eventSource = api.agent.generate(projectId, prompt)
     let assistantMsg = ''
-
     setMessages((prev) => [...prev, { role: 'assistant', content: '' }])
 
-    eventSource.onmessage = (event) => {
-      assistantMsg += event.data
-      setMessages((prev) => {
-        const updated = [...prev]
-        updated[updated.length - 1] = { role: 'assistant', content: assistantMsg }
-        return updated
-      })
-    }
-
-    eventSource.onerror = () => {
-      eventSource.close()
-      setStreaming(false)
-      if (!assistantMsg) {
-        setMessages((prev) => {
-          const updated = [...prev]
-          updated[updated.length - 1] = {
-            role: 'assistant',
-            content: 'Connection error. Please try again.',
+    api.agent.generate(
+      { conversationId: projectId, projectId, message: prompt },
+      {
+        onChunk: (data) => {
+          assistantMsg += data
+          setMessages((prev) => {
+            const updated = [...prev]
+            updated[updated.length - 1] = { role: 'assistant', content: assistantMsg }
+            return updated
+          })
+        },
+        onDone: () => {
+          setStreaming(false)
+        },
+        onError: () => {
+          setStreaming(false)
+          if (!assistantMsg) {
+            setMessages((prev) => {
+              const updated = [...prev]
+              updated[updated.length - 1] = {
+                role: 'assistant',
+                content: 'Connection error. Please try again.',
+              }
+              return updated
+            })
           }
-          return updated
-        })
-      }
-    }
+        },
+      },
+    )
   }
 
   return (

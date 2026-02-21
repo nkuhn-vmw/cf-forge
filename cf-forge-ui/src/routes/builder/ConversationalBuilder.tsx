@@ -39,49 +39,53 @@ export function ConversationalBuilder() {
     setInput('')
     setStreaming(true)
 
-    const eventSource = api.agent.generate('builder', prompt)
     let response = ''
-
     setMessages((prev) => [...prev, { role: 'assistant', content: '' }])
 
-    eventSource.onmessage = (event) => {
-      response += event.data
-      setMessages((prev) => {
-        const updated = [...prev]
-        updated[updated.length - 1] = { role: 'assistant', content: response }
-        return updated
-      })
-    }
-
-    eventSource.onerror = () => {
-      eventSource.close()
-      setStreaming(false)
-
-      if (!response) {
-        setMessages((prev) => {
-          const updated = [...prev]
-          updated[updated.length - 1] = { role: 'assistant', content: 'Connection error. Please try again.' }
-          return updated
-        })
-      } else {
-        // Parse project info from response if it looks like a generation result
-        const nameMatch = response.match(/project[:\s]+["']?([a-zA-Z0-9-]+)["']?/i)
-        const langMatch = response.match(/language[:\s]+["']?(\w+)["']?/i)
-        const fwMatch = response.match(/framework[:\s]+["']?([a-zA-Z0-9.]+)["']?/i)
-        if (nameMatch) {
-          setGeneratedProject({
-            name: nameMatch[1],
-            language: langMatch?.[1] ?? 'java',
-            framework: fwMatch?.[1] ?? '',
-          })
+    api.agent.generate(
+      { conversationId: 'builder', message: prompt },
+      {
+        onChunk: (data) => {
+          response += data
           setMessages((prev) => {
             const updated = [...prev]
-            updated[updated.length - 1] = { ...updated[updated.length - 1], projectReady: true }
+            updated[updated.length - 1] = { role: 'assistant', content: response }
             return updated
           })
-        }
-      }
-    }
+        },
+        onDone: () => {
+          setStreaming(false)
+          if (response) {
+            // Parse project info from response if it looks like a generation result
+            const nameMatch = response.match(/project[:\s]+["']?([a-zA-Z0-9-]+)["']?/i)
+            const langMatch = response.match(/language[:\s]+["']?(\w+)["']?/i)
+            const fwMatch = response.match(/framework[:\s]+["']?([a-zA-Z0-9.]+)["']?/i)
+            if (nameMatch) {
+              setGeneratedProject({
+                name: nameMatch[1],
+                language: langMatch?.[1] ?? 'java',
+                framework: fwMatch?.[1] ?? '',
+              })
+              setMessages((prev) => {
+                const updated = [...prev]
+                updated[updated.length - 1] = { ...updated[updated.length - 1], projectReady: true }
+                return updated
+              })
+            }
+          }
+        },
+        onError: () => {
+          setStreaming(false)
+          if (!response) {
+            setMessages((prev) => {
+              const updated = [...prev]
+              updated[updated.length - 1] = { role: 'assistant', content: 'Connection error. Please try again.' }
+              return updated
+            })
+          }
+        },
+      },
+    )
   }
 
   const handleCreateProject = async () => {

@@ -157,6 +157,66 @@ export interface AgentDefinition {
   capabilities: string[]
 }
 
+/**
+ * Parse an SSE stream from a ReadableStream<Uint8Array>.
+ * Buffers partial lines and invokes `onData` for each `data:` payload.
+ * Calls `onDone` when the stream ends normally.
+ */
+async function parseSSEStream(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  onData: (data: string) => void,
+  onDone: () => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  try {
+    while (true) {
+      if (signal?.aborted) {
+        reader.cancel()
+        return
+      }
+      const { done, value } = await reader.read()
+      if (done) {
+        // Process any remaining data in buffer
+        if (buffer.trim()) {
+          for (const line of buffer.split('\n')) {
+            const trimmed = line.trim()
+            if (trimmed.startsWith('data:')) {
+              const payload = trimmed.slice(5).trim()
+              if (payload && payload !== '[DONE]') {
+                onData(payload)
+              }
+            }
+          }
+        }
+        onDone()
+        return
+      }
+
+      buffer += decoder.decode(value, { stream: true })
+
+      // Split on newlines; last element may be a partial line
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed.startsWith('data:')) {
+          const payload = trimmed.slice(5).trim()
+          if (payload && payload !== '[DONE]') {
+            onData(payload)
+          }
+        }
+        // Ignore other SSE fields (event:, id:, retry:, comments)
+      }
+    }
+  } finally {
+    reader.releaseLock()
+  }
+}
+
 export const api = {
   projects: {
     list: () => request<Project[]>('/projects'),
@@ -205,9 +265,61 @@ export const api = {
   },
 
   agent: {
-    generate: (projectId: string, prompt: string): EventSource => {
-      const params = new URLSearchParams({ projectId, prompt })
-      return new EventSource(`${BASE_URL}/agent/generate?${params}`, { withCredentials: true })
+    generate(
+      params: { conversationId: string; projectId?: string; message: string },
+      callbacks: {
+        onChunk: (data: string) => void
+        onDone: () => void
+        onError: (err: Error) => void
+        signal?: AbortSignal
+      },
+    ): void {
+      const { onChunk, onDone, onError, signal } = callbacks
+
+      const doFetch = async (isRetry = false): Promise<void> => {
+        try {
+          const res = await fetch(`${BASE_URL}/agent/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(params),
+            signal,
+          })
+
+          if (res.status === 401 && !isRetry) {
+            // Deduplicate concurrent refresh attempts
+            if (!refreshPromise) {
+              refreshPromise = attemptRefresh().finally(() => { refreshPromise = null })
+            }
+            const refreshed = await refreshPromise
+            if (refreshed) {
+              return doFetch(true)
+            }
+            window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+            onError(new Error('Authentication required'))
+            return
+          }
+
+          if (!res.ok) {
+            const errorText = await res.text().catch(() => res.statusText)
+            onError(new Error(`API Error ${res.status}: ${errorText}`))
+            return
+          }
+
+          if (!res.body) {
+            onError(new Error('Response body is null — streaming not supported'))
+            return
+          }
+
+          const reader = res.body.getReader()
+          await parseSSEStream(reader, onChunk, onDone, signal)
+        } catch (err: unknown) {
+          if (signal?.aborted) return
+          onError(err instanceof Error ? err : new Error(String(err)))
+        }
+      }
+
+      doFetch()
     },
   },
 
