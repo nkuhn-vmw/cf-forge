@@ -179,7 +179,8 @@ async function parseSSEStream(
       }
       const { done, value } = await reader.read()
       if (done) {
-        // Process any remaining data in buffer
+        // Flush any remaining bytes from the decoder
+        buffer += decoder.decode()
         if (buffer.trim()) {
           for (const line of buffer.split('\n')) {
             const trimmed = line.trim()
