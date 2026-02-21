@@ -5,6 +5,7 @@ import { useWorkspaceStore } from '../../store/workspace.ts'
 import { api } from '../../api/client.ts'
 import type { FileEntry } from '../../api/client.ts'
 import { useQueryClient } from '@tanstack/react-query'
+import { notify } from '../../store/notifications.ts'
 
 interface ContextMenu {
   x: number
@@ -36,8 +37,8 @@ function FileTreeNode({ entry, projectId, depth, onContextMenu }: {
           language: '',
           modified: false,
         })
-      } catch (err) {
-        console.error('Failed to read file:', err)
+      } catch (err: any) {
+        notify.error('Failed to read file: ' + (err?.message ?? err))
       }
     }
   }
@@ -154,8 +155,8 @@ export function FileTree({ projectId }: { projectId: string }) {
     try {
       await api.files.delete(projectId, entry.path)
       queryClient.invalidateQueries({ queryKey: ['files', projectId] })
-    } catch (err) {
-      console.error('Delete failed:', err)
+    } catch (err: any) {
+      notify.error('Delete failed: ' + (err?.message ?? err))
     }
   }
 
@@ -176,8 +177,8 @@ export function FileTree({ projectId }: { projectId: string }) {
     try {
       await api.files.write(projectId, path, '')
       queryClient.invalidateQueries({ queryKey: ['files', projectId] })
-    } catch (err) {
-      console.error('Create file failed:', err)
+    } catch (err: any) {
+      notify.error('Create file failed: ' + (err?.message ?? err))
     }
     setShowNewFileInput(false)
     setInputValue('')
@@ -199,8 +200,8 @@ export function FileTree({ projectId }: { projectId: string }) {
         await api.files.delete(projectId, oldPath)
       }
       queryClient.invalidateQueries({ queryKey: ['files', projectId] })
-    } catch (err) {
-      console.error('Rename failed:', err)
+    } catch (err: any) {
+      notify.error('Rename failed: ' + (err?.message ?? err))
     }
     setShowRenameInput(null)
     setInputValue('')

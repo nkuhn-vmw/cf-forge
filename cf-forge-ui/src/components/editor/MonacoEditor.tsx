@@ -1,6 +1,7 @@
 import Editor from '@monaco-editor/react'
 import { useWorkspaceStore } from '../../store/workspace.ts'
 import { api } from '../../api/client.ts'
+import { notify } from '../../store/notifications.ts'
 
 export function MonacoEditor() {
   const { openFiles, activeFilePath, updateFileContent, markFileSaved, projectId } =
@@ -30,6 +31,9 @@ export function MonacoEditor() {
     if (!projectId || !activeFile.modified) return
     api.files.write(projectId, activeFile.path, activeFile.content).then(() => {
       markFileSaved(activeFile.path)
+      notify.success('Saved ' + activeFile.name)
+    }).catch((err: any) => {
+      notify.error('Save failed: ' + (err?.message ?? err))
     })
   }
 
