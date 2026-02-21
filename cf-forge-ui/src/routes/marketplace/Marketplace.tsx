@@ -37,6 +37,7 @@ export function Marketplace() {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeCategory, setActiveCategory] = useState<string>('All')
   const [provisioningName, setProvisioningName] = useState<string | null>(null)
+  const [provisionedServices, setProvisionedServices] = useState<Set<string>>(new Set())
 
   const filtered = services?.filter((svc) => {
     const matchesSearch = !searchTerm ||
@@ -51,6 +52,7 @@ export function Marketplace() {
     setProvisioningName(serviceName)
     try {
       await provision.mutateAsync({ serviceName, plan, instanceName })
+      setProvisionedServices((prev) => new Set(prev).add(serviceName))
     } finally {
       setProvisioningName(null)
     }
@@ -162,11 +164,13 @@ export function Marketplace() {
                   {projectId && service.plans?.length > 0 && (
                     <button
                       onClick={() => handleProvision(service.name, service.plans[0])}
-                      disabled={provisioningName === service.name || provision.isSuccess}
+                      disabled={provisioningName === service.name || provisionedServices.has(service.name)}
                       className="btn-provision"
                     >
                       {provisioningName === service.name ? (
                         <><Loader2 size={12} /> Provisioning...</>
+                      ) : provisionedServices.has(service.name) ? (
+                        <><Database size={12} /> Provisioned</>
                       ) : (
                         <><Plus size={12} /> Provision & Bind</>
                       )}
