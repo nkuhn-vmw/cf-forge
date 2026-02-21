@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
   PanelLeftClose, PanelLeftOpen, TerminalSquare, MessageSquare,
-  Rocket, ArrowLeft, Package, Globe, Activity, Database, ChevronDown,
+  Rocket, ArrowLeft, Package, Globe, Activity, Database, ChevronDown, FileCode,
 } from 'lucide-react'
 import { useWorkspaceStore } from '../../store/workspace.ts'
 import { useProject } from '../../api/queries.ts'
@@ -15,8 +15,9 @@ import { ChatPanel } from '../../components/chat/ChatPanel.tsx'
 import { LivePreview } from '../../components/preview/LivePreview.tsx'
 import { AppHealthDashboard } from '../../components/preview/AppHealthDashboard.tsx'
 import { VcapExplorer } from '../../components/preview/VcapExplorer.tsx'
+import { ManifestValidator } from '../../components/preview/ManifestValidator.tsx'
 
-type BottomTab = 'terminal' | 'preview' | 'health' | 'services'
+type BottomTab = 'terminal' | 'preview' | 'health' | 'services' | 'manifest'
 type DeployEnv = 'STAGING' | 'PRODUCTION'
 
 export function WorkspaceLayout() {
@@ -157,6 +158,7 @@ export function WorkspaceLayout() {
                   { key: 'preview' as BottomTab, icon: Globe, label: 'Preview' },
                   { key: 'health' as BottomTab, icon: Activity, label: 'Health' },
                   { key: 'services' as BottomTab, icon: Database, label: 'Services' },
+                  { key: 'manifest' as BottomTab, icon: FileCode, label: 'Manifest' },
                 ]).map(({ key, icon: Icon, label }) => (
                   <button
                     key={key}
@@ -193,6 +195,11 @@ export function WorkspaceLayout() {
                 {bottomTab === 'services' && (
                   <div className="flex-1 overflow-auto">
                     <VcapExplorer projectId={projectId} />
+                  </div>
+                )}
+                {bottomTab === 'manifest' && (
+                  <div className="flex-1 overflow-auto">
+                    <ManifestValidator />
                   </div>
                 )}
               </div>

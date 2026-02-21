@@ -48,7 +48,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   openFiles: [],
   activeFilePath: null,
   sidebarOpen: true,
-  terminalOpen: false,
+  terminalOpen: true,
   chatOpen: false,
 
   setProjectId: (id) => set({ projectId: id }),
