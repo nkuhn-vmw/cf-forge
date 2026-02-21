@@ -8,6 +8,11 @@ interface OpenFile {
   modified: boolean
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
 interface WorkspaceState {
   projectId: string | null
   openFiles: OpenFile[]
@@ -15,6 +20,8 @@ interface WorkspaceState {
   sidebarOpen: boolean
   terminalOpen: boolean
   chatOpen: boolean
+  chatMessages: ChatMessage[]
+  chatConversationId: string
 
   setProjectId: (id: string) => void
   openFile: (file: OpenFile) => void
@@ -25,6 +32,9 @@ interface WorkspaceState {
   toggleSidebar: () => void
   toggleTerminal: () => void
   toggleChat: () => void
+  addChatMessage: (msg: ChatMessage) => void
+  updateLastChatMessage: (content: string) => void
+  clearChatMessages: () => void
 }
 
 function getLanguage(path: string): string {
@@ -50,8 +60,14 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   sidebarOpen: true,
   terminalOpen: true,
   chatOpen: false,
+  chatMessages: [],
+  chatConversationId: crypto.randomUUID(),
 
-  setProjectId: (id) => set({ projectId: id }),
+  setProjectId: (id) => set({
+    projectId: id,
+    chatMessages: [],
+    chatConversationId: crypto.randomUUID(),
+  }),
 
   openFile: (file) =>
     set((state) => {
@@ -92,4 +108,19 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   toggleTerminal: () => set((state) => ({ terminalOpen: !state.terminalOpen })),
   toggleChat: () => set((state) => ({ chatOpen: !state.chatOpen })),
+
+  addChatMessage: (msg) =>
+    set((state) => ({ chatMessages: [...state.chatMessages, msg] })),
+
+  updateLastChatMessage: (content) =>
+    set((state) => {
+      const msgs = [...state.chatMessages]
+      if (msgs.length > 0) {
+        msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content }
+      }
+      return { chatMessages: msgs }
+    }),
+
+  clearChatMessages: () =>
+    set({ chatMessages: [], chatConversationId: crypto.randomUUID() }),
 }))

@@ -1,19 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User } from 'lucide-react'
 import { api } from '../../api/client.ts'
-
-interface Message {
-  role: 'user' | 'assistant'
-  content: string
-}
+import { useWorkspaceStore } from '../../store/workspace.ts'
 
 export function ChatPanel({ projectId }: { projectId: string }) {
-  const [messages, setMessages] = useState<Message[]>([])
+  const { chatMessages: messages, chatConversationId, addChatMessage, updateLastChatMessage } =
+    useWorkspaceStore()
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
-  const conversationIdRef = useRef(crypto.randomUUID())
 
   useEffect(() => () => { abortRef.current?.abort() }, [])
 
@@ -27,7 +23,7 @@ export function ChatPanel({ projectId }: { projectId: string }) {
     const prompt = input.trim()
     if (!prompt || streaming) return
 
-    setMessages((prev) => [...prev, { role: 'user', content: prompt }])
+    addChatMessage({ role: 'user', content: prompt })
     setInput('')
     setStreaming(true)
 
@@ -36,18 +32,14 @@ export function ChatPanel({ projectId }: { projectId: string }) {
     abortRef.current = controller
 
     let assistantMsg = ''
-    setMessages((prev) => [...prev, { role: 'assistant', content: '' }])
+    addChatMessage({ role: 'assistant', content: '' })
 
     api.agent.generate(
-      { conversationId: conversationIdRef.current, projectId, message: prompt },
+      { conversationId: chatConversationId, projectId, message: prompt },
       {
         onChunk: (data) => {
           assistantMsg += data
-          setMessages((prev) => {
-            const updated = [...prev]
-            updated[updated.length - 1] = { role: 'assistant', content: assistantMsg }
-            return updated
-          })
+          updateLastChatMessage(assistantMsg)
         },
         onDone: () => {
           setStreaming(false)
@@ -55,14 +47,7 @@ export function ChatPanel({ projectId }: { projectId: string }) {
         onError: (err) => {
           setStreaming(false)
           if (!assistantMsg) {
-            setMessages((prev) => {
-              const updated = [...prev]
-              updated[updated.length - 1] = {
-                role: 'assistant',
-                content: err.message || 'Connection error. Please try again.',
-              }
-              return updated
-            })
+            updateLastChatMessage(err.message || 'Connection error. Please try again.')
           }
         },
         signal: controller.signal,
