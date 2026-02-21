@@ -2,16 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FileCode, Loader2, CheckCircle, AlertTriangle, ArrowLeft } from 'lucide-react'
 import { api } from '../../api/client.ts'
-
-interface MigrationPlan {
-  sourceStack: string
-  targetStack: string
-  complexityScore: string
-  steps: { order: number; title: string; description: string; category: string; effort: string }[]
-  recommendedServices: string[]
-  risks: string[]
-  effortEstimate: Record<string, string>
-}
+import type { MigrationPlan } from '../../api/client.ts'
 
 export function MigrationAssistant() {
   const [code, setCode] = useState('')
@@ -26,7 +17,7 @@ export function MigrationAssistant() {
     setError('')
     try {
       const result = await api.migration.analyze({ code, description, sourceStack })
-      setPlan(result as MigrationPlan)
+      setPlan(result)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {

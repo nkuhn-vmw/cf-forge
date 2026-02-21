@@ -2,25 +2,6 @@ import { Activity, Cpu, HardDrive, Server, RefreshCcw } from 'lucide-react'
 import { useAppHealth } from '../../api/queries.ts'
 import '../../ui.css'
 
-interface AppHealth {
-  state: string
-  instances: number
-  memoryQuota: string
-  diskQuota: string
-  instanceDetails: InstanceDetail[]
-}
-
-interface InstanceDetail {
-  index: number
-  state: string
-  cpuPercent: number
-  memoryBytes: number
-  memoryQuotaBytes: number
-  diskBytes: number
-  diskQuotaBytes: number
-  uptime: number
-}
-
 function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(0)} MB`
@@ -34,11 +15,7 @@ function formatUptime(seconds: number): string {
 }
 
 export function AppHealthDashboard({ projectId }: { projectId: string }) {
-  const { data: health, isLoading, refetch } = useAppHealth(projectId) as {
-    data: AppHealth | undefined
-    isLoading: boolean
-    refetch: () => void
-  }
+  const { data: health, isLoading, refetch } = useAppHealth(projectId)
 
   return (
     <div className="content-container-sm">

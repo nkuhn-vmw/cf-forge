@@ -149,12 +149,40 @@ export interface MigrationPlan {
   steps: { order: number; title: string; description: string; category: string; effort: string }[]
   recommendedServices: string[]
   risks: string[]
+  effortEstimate?: Record<string, string>
 }
 
 export interface AgentDefinition {
   name: string
   role: string
   capabilities: string[]
+}
+
+export interface InstanceDetail {
+  index: number
+  state: string
+  cpuPercent: number
+  memoryBytes: number
+  memoryQuotaBytes: number
+  diskBytes: number
+  diskQuotaBytes: number
+  uptime: number
+}
+
+export interface AppHealth {
+  state: string
+  instances: number
+  memoryQuota: string
+  diskQuota: string
+  instanceDetails: InstanceDetail[]
+}
+
+export interface VcapService {
+  label: string
+  name: string
+  plan: string
+  credentials: Record<string, string>
+  tags: string[]
 }
 
 /**
@@ -320,7 +348,7 @@ export const api = {
         }
       }
 
-      doFetch()
+      doFetch().catch((err) => onError(err instanceof Error ? err : new Error(String(err))))
     },
   },
 
@@ -376,11 +404,11 @@ export const api = {
   },
 
   health: {
-    get: (projectId: string) => request<any>(`/projects/${projectId}/health`),
+    get: (projectId: string) => request<AppHealth>(`/projects/${projectId}/health`),
   },
 
   vcap: {
-    get: (projectId: string) => request<any[]>(`/projects/${projectId}/vcap`),
+    get: (projectId: string) => request<VcapService[]>(`/projects/${projectId}/vcap`),
   },
 
   bench: {

@@ -3,19 +3,8 @@ import { Database, ChevronRight, ChevronDown, Key } from 'lucide-react'
 import { useVcapServices } from '../../api/queries.ts'
 import '../../ui.css'
 
-interface VcapService {
-  label: string
-  name: string
-  plan: string
-  credentials: Record<string, string>
-  tags: string[]
-}
-
 export function VcapExplorer({ projectId }: { projectId: string }) {
-  const { data: services, isLoading } = useVcapServices(projectId) as {
-    data: VcapService[] | undefined
-    isLoading: boolean
-  }
+  const { data: services, isLoading } = useVcapServices(projectId)
   const [expanded, setExpanded] = useState<string | null>(null)
 
   return (
