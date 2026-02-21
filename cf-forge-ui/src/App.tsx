@@ -8,6 +8,7 @@ import { MigrationAssistant } from './routes/migration/MigrationAssistant.tsx'
 import { AuthProvider } from './components/AuthProvider.tsx'
 import { ProtectedRoute } from './components/ProtectedRoute.tsx'
 import { Login } from './routes/auth/Login.tsx'
+import { Notifications } from './components/Notifications.tsx'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
         <Route path="/migration" element={<ProtectedRoute><MigrationAssistant /></ProtectedRoute>} />
       </Routes>
+      <Notifications />
     </AuthProvider>
   )
 }
