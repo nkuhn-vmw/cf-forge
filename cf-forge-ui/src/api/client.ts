@@ -190,7 +190,7 @@ export interface VcapService {
  * Buffers partial lines and invokes `onData` for each `data:` payload.
  * Calls `onDone` when the stream ends normally.
  */
-async function parseSSEStream(
+export async function parseSSEStream(
   reader: ReadableStreamDefaultReader<Uint8Array>,
   onData: (data: string) => void,
   onDone: () => void,
