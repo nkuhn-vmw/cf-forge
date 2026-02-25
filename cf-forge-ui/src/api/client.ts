@@ -186,6 +186,32 @@ export interface VcapService {
 }
 
 /**
+ * Extract the data payload from an SSE line per the spec:
+ * strip exactly one leading space after "data:" if present.
+ * If the payload is a JSON object with a "token" field, extract the token
+ * to preserve whitespace that SSE transport would otherwise strip.
+ * Returns null for non-data lines or empty data.
+ */
+function extractSSEData(line: string): string | null {
+  const stripped = line.replace(/\r$/, '')
+  if (!stripped.startsWith('data:')) return null
+  // Per SSE spec: if char after "data:" is a space, strip that one space only
+  const afterColon = stripped.slice(5)
+  const payload = afterColon.startsWith(' ') ? afterColon.slice(1) : afterColon
+  if (!payload) return null
+  // Try to unwrap JSON token envelope: {"token":" the"}
+  if (payload.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(payload)
+      if (typeof parsed.token === 'string') return parsed.token
+    } catch {
+      // Not valid JSON — fall through to raw payload
+    }
+  }
+  return payload
+}
+
+/**
  * Parse an SSE stream from a ReadableStream<Uint8Array>.
  * Buffers partial lines and invokes `onData` for each `data:` payload.
  * Calls `onDone` when the stream ends normally.
@@ -211,12 +237,9 @@ export async function parseSSEStream(
         buffer += decoder.decode()
         if (buffer.trim()) {
           for (const line of buffer.split('\n')) {
-            const trimmed = line.trim()
-            if (trimmed.startsWith('data:')) {
-              const payload = trimmed.slice(5).trim()
-              if (payload && payload !== '[DONE]') {
-                onData(payload)
-              }
+            const payload = extractSSEData(line)
+            if (payload !== null && payload !== '[DONE]') {
+              onData(payload)
             }
           }
         }
@@ -231,14 +254,10 @@ export async function parseSSEStream(
       buffer = lines.pop() ?? ''
 
       for (const line of lines) {
-        const trimmed = line.trim()
-        if (trimmed.startsWith('data:')) {
-          const payload = trimmed.slice(5).trim()
-          if (payload && payload !== '[DONE]') {
-            onData(payload)
-          }
+        const payload = extractSSEData(line)
+        if (payload !== null && payload !== '[DONE]') {
+          onData(payload)
         }
-        // Ignore other SSE fields (event:, id:, retry:, comments)
       }
     }
   } finally {

@@ -2,6 +2,8 @@ package com.cfforge.agent.controller;
 
 import com.cfforge.agent.model.GeneratedAppPlan;
 import com.cfforge.agent.service.AgentService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -14,9 +16,11 @@ import java.util.UUID;
 public class AgentController {
 
     private final AgentService agentService;
+    private final ObjectMapper objectMapper;
 
-    public AgentController(AgentService agentService) {
+    public AgentController(AgentService agentService, ObjectMapper objectMapper) {
         this.agentService = agentService;
+        this.objectMapper = objectMapper;
     }
 
     @PostMapping(value = "/generate", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -24,7 +28,15 @@ public class AgentController {
         UUID conversationId = UUID.fromString(body.get("conversationId"));
         UUID projectId = parseUuidOrNull(body.get("projectId"));
         String message = body.get("message");
-        return agentService.generate(conversationId, projectId, message);
+        // JSON-encode each token to preserve whitespace through SSE transport
+        return agentService.generate(conversationId, projectId, message)
+            .map(token -> {
+                try {
+                    return objectMapper.writeValueAsString(Map.of("token", token));
+                } catch (JsonProcessingException e) {
+                    return "{\"token\":" + token + "}";
+                }
+            });
     }
 
     @PostMapping("/structured")

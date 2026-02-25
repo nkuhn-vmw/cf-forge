@@ -97,4 +97,33 @@ describe('parseSSEStream', () => {
     await parseSSEStream(reader, (data) => chunks.push(data), () => {})
     expect(chunks).toEqual(['one', 'two', 'three'])
   })
+
+  it('preserves leading whitespace in tokens (SSE spec: strip only one space after data:)', async () => {
+    const chunks: string[] = []
+    // "data:Hello" -> "Hello", "data: world" -> "world", "data:  there" -> " there"
+    const reader = mockReader(['data:Hello\n\ndata: world\n\ndata:  there\n\n'])
+    await parseSSEStream(reader, (data) => chunks.push(data), () => {})
+    expect(chunks).toEqual(['Hello', 'world', ' there'])
+  })
+
+  it('unwraps JSON token envelope to preserve whitespace', async () => {
+    const chunks: string[] = []
+    // Agent wraps tokens in JSON: {"token":"Cloud"}, {"token":" Foundry"}, {"token":" is"}
+    const reader = mockReader([
+      'data: {"token":"Cloud"}\n\n',
+      'data: {"token":" Foundry"}\n\n',
+      'data: {"token":" is"}\n\n',
+      'data: {"token":" great"}\n\n',
+    ])
+    await parseSSEStream(reader, (data) => chunks.push(data), () => {})
+    expect(chunks).toEqual(['Cloud', ' Foundry', ' is', ' great'])
+    expect(chunks.join('')).toBe('Cloud Foundry is great')
+  })
+
+  it('falls back to raw payload for non-JSON data', async () => {
+    const chunks: string[] = []
+    const reader = mockReader(['data: plain text\n\n'])
+    await parseSSEStream(reader, (data) => chunks.push(data), () => {})
+    expect(chunks).toEqual(['plain text'])
+  })
 })
